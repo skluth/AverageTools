@@ -1,0 +1,19 @@
+# Input data for unittests of blue and clsqAverage
+[Data]
+Names:  Val1  Val2  Val3
+Values: 171.5 173.1 174.5
+00Stat:   0.3   0.33  0.4 c
+01Err1:   1.1   1.3   1.5 m
+02Err2:   0.9   1.5   1.9 m
+03Err3:   2.4   3.1   3.5 p
+04Err4:   1.4   2.9   3.3 f
+[Covariances]
+00Stat: 1. 0. 0.
+        0. 1. 0.
+        0. 0. 1.
+01Err1: p p p
+        p p p
+        p p p
+02Err2: f f f
+        f f f
+        f f f
