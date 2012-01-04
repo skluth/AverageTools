@@ -1,7 +1,7 @@
 
 from AverageDataParser import AverageDataParser, stripLeadingDigits
 from ConstrainedFit import clsq
-from math import sqrt
+from math import sqrt, exp
 
 class clsqAverage:
 

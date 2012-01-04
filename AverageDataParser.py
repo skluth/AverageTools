@@ -43,6 +43,12 @@ class AverageDataParser:
                 listvalue= value.split()
                 hcovopt[key]= listvalue.pop()
                 herrors[key]= [ float(s) for s in listvalue ]
+
+        for key in herrors.keys():
+            if "%" in hcovopt[key]:
+                for ierr in range( len(herrors[key]) ):
+                    herrors[key][ierr]*= ldata[ierr]/100.0
+
         self.__names= names.split()
         self.__inputs= ldata
         self.__covopts= hcovopt
