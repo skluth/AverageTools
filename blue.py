@@ -2,6 +2,7 @@
 # Python implementation of BLUE averaging
 # see NIM A500 (2003) 391
 # S. Kluth 12/2011
+# AverageDataParser reads input files
 
 import numpy
 from AverageDataParser import AverageDataParser, stripLeadingDigits
