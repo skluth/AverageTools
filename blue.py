@@ -1,5 +1,6 @@
 
 # Python implementation of BLUE averaging
+# see NIM A500 (2003) 391
 # S. Kluth 12/2011
 
 import numpy
