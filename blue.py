@@ -1,4 +1,7 @@
 
+# Python implementation of BLUE averaging
+# S. Kluth 12/2011
+
 import numpy
 from AverageDataParser import AverageDataParser, stripLeadingDigits
 from math import sqrt
