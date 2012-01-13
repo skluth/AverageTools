@@ -161,9 +161,8 @@ class blue:
         errorlist= self.errors.keys()
         errorlist.sort()
         for errorkey in errorlist + [ "syst", "total" ]:
-            print "{0:>10s}: {1:10.4f}".format( 
-                stripLeadingDigits( errorkey ), 
-                herrs[errorkey] )
+            print "{0:>10s}: {1:10.4f}".format( stripLeadingDigits( errorkey ), 
+                                                herrs[errorkey] )
         print
         return
 
