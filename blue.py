@@ -20,79 +20,10 @@ class blue:
         self.covopts= self.dataparser.getCovoption()
         self.correlations= self.dataparser.getCorrelations()
         self.totalerrors= self.dataparser.getTotalErrors()
-        self.hcov, self.cov, self.inv= self.__makeCovariances()
+        self.hcov= self.dataparser.getCovariances()
+        self.cov= self.dataparser.getTotalCovariance()
+        self.inv= self.cov.getI()
         return
-
-    def __makeZeroMatrix( self ):
-        ndim= len( self.data )
-        return numpy.matrix( numpy.zeros( shape=(ndim,ndim) ) )
-
-    def __makeMatrixFromList( self, lelements ):
-        m= numpy.matrix( lelements )
-        ndim= len( self.data )
-        m.shape= ( ndim, ndim )
-        return m
-
-    # Calculate covariances from inputs and keep as numpy matrices:
-    def __makeCovariances( self ):
-        hcov= {}
-        cov= self.__makeZeroMatrix()
-        for errorkey in self.errors.keys():
-            lcov= []
-            errors= self.errors[errorkey] 
-            covoption= self.covopts[errorkey]
-            iderr1= 0
-            if "g" in covoption:
-                minerr= min( errors )
-            for err1 in errors:
-                iderr1+= 1
-                iderr2= 0
-                for err2 in errors:
-                    iderr2+= 1
-                    # Global options, all covariances according to
-                    # same rule gp, p, f or u:
-                    if "gp" in covoption:
-                        if iderr1 == iderr2:
-                            lcov.append( err1**2 )
-                        else:
-                            lcov.append( minerr**2 )
-                    elif "p" in covoption:
-                        lcov.append( min( err1, err2 )**2 )
-                    elif "f" in covoption:
-                        lcov.append( err1*err2 )
-                    elif "u" in covoption:
-                        if iderr1 == iderr2:
-                            lcov.append( err1**2 )
-                        else:
-                            lcov.append( 0.0 )
-                    # Covariances from correlations and errors:
-                    elif "c" in covoption:
-                        idx= len( lcov )
-                        corrlist= self.correlations[errorkey]
-                        lcov.append( corrlist[idx]*err1*err2 )
-                    # Covariances from options:
-                    elif "m" in covoption:
-                        idx= len( lcov )
-                        mcovopts= self.correlations[errorkey]
-                        mcovopt= mcovopts[idx]
-                        if "p" in mcovopt:
-                            lcov.append( min(err1,err2)**2 )
-                        elif "f" in mcovopt:
-                            lcov.append( err1*err2 )
-                        elif "u" in mcovopt:
-                            if iderr1 == iderr2:
-                                lcov.append( err1**2 )
-                            else:
-                                lcov.append( 0.0 )
-                    else:
-                        print "Option", covoption, "not recognised"
-                        return
-            m= self.__makeMatrixFromList( lcov )
-            cov+= m
-            hcov[errorkey]= m
-        # Inverse:
-        inv= cov.getI()
-        return hcov, cov, inv
 
     # Calculate weights from inverse covariance matrix:
     def calcWeights( self ):
@@ -187,6 +118,9 @@ class blue:
         return pulls
 
     # Error analysis from weights and input covariance matrices:
+    def __makeZeroMatrix( self ):
+        ndim= len( self.data )
+        return numpy.matrix( numpy.zeros( shape=(ndim,ndim) ) )
     def errorAnalysis( self, keys=None ):
         hcov= self.hcov
         if keys == None:

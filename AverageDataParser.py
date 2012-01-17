@@ -25,6 +25,7 @@ class AverageDataParser:
         parser.read( filename )
         self.__readData( parser )
         self.__readCovariances( parser )
+        self.__makeCovariances()
         return
 
     # Read "Data" section:
@@ -43,12 +44,10 @@ class AverageDataParser:
                 listvalue= value.split()
                 hcovopt[key]= listvalue.pop()
                 herrors[key]= [ float(s) for s in listvalue ]
-
         for key in herrors.keys():
             if "%" in hcovopt[key]:
                 for ierr in range( len(herrors[key]) ):
                     herrors[key][ierr]*= ldata[ierr]/100.0
-
         self.__names= names.split()
         self.__inputs= ldata
         self.__covopts= hcovopt
@@ -70,13 +69,87 @@ class AverageDataParser:
             self.__correlations= hcovlists
         return
 
+    # Calculate covariances from inputs and keep as numpy matrices:
+    def __makeZeroMatrix( self ):
+        ndim= len( self.__inputs )
+        return numpy.matrix( numpy.zeros( shape=(ndim,ndim) ) )
+    def __makeMatrixFromList( self, lelements ):
+        m= numpy.matrix( lelements )
+        ndim= len( self.__inputs )
+        m.shape= ( ndim, ndim )
+        return m
+    def __calcCovariance( self, covoption, err1, err2, iderr1, iderr2 ):
+        if "f" in covoption:
+            cov= err1*err2
+        elif "a" in covoption:
+            cov= -err1*err2
+        elif "p" in covoption:
+            cov= min( err1, err2 )**2
+        elif "u" in covoption:
+            if iderr1 == iderr2:
+                cov= err1**2
+            else:
+                cov= 0.0
+        return cov
+    def __makeCovariances( self ):
+        hcov= {}
+        cov= self.__makeZeroMatrix()
+        for errorkey in self.__errors.keys():
+            lcov= []
+            errors= self.__errors[errorkey] 
+            covoption= self.__covopts[errorkey]
+            iderr1= 0
+            if "g" in covoption:
+                minerr= min( errors )
+            for err1 in errors:
+                iderr1+= 1
+                iderr2= 0
+                for err2 in errors:
+                    iderr2+= 1
+                    # Global options, all covariances according to
+                    # same rule gp, p, f or u:
+                    if "gp" in covoption:
+                        if iderr1 == iderr2:
+                            covelement= err1**2
+                        else:
+                            covelement= minerr**2
+                    # Direct calculation from "f", "p" or "u":
+                    elif( "f" in covoption or "p" in covoption or
+                          "u" in covoption or "a" in covoption ):
+                        covelement= self.__calcCovariance( covoption,
+                                                           err1, err2, 
+                                                           iderr1, iderr2 )
+                    # Covariances from correlations and errors:
+                    elif "c" in covoption:
+                        idx= len( lcov )
+                        corrlist= self.__correlations[errorkey]
+                        covelement= corrlist[idx]*err1*err2
+                    # Covariances from options:
+                    elif "m" in covoption:
+                        idx= len( lcov )
+                        mcovopts= self.__correlations[errorkey]
+                        mcovopt= mcovopts[idx]
+                        covelement= self.__calcCovariance( mcovopt,
+                                                           err1, err2, 
+                                                           iderr1, iderr2 )
+                    else:
+                        print "Option", covoption, "not recognised"
+                        return
+                    lcov.append( covelement )
+            m= self.__makeMatrixFromList( lcov )
+            cov+= m
+            hcov[errorkey]= m
+        self.__hcov= hcov
+        self.__cov= cov
+        return
+
     # Print inputs:
     def printInputs( self, keys=None ):
         if keys == None:
             keys= self.__errors.keys()
             keys.sort()
         print "\n AverageDataParser: input from", self.__filename
-        print "\n     Names:", 
+        print "\n Variables:", 
         for name in self.__names:
             print "{0:>10s}".format( name ),
         print "Covariance option"
@@ -137,4 +210,8 @@ class AverageDataParser:
             return None
         else:
             return dict( self.__correlations )
+    def getCovariances( self ):
+        return dict( self.__hcov )
+    def getTotalCovariance( self ):
+        return self.__cov.copy()
 

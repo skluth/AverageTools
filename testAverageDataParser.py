@@ -98,7 +98,7 @@ class AverageDataParserTest( unittest.TestCase ):
         printout= output.getvalue()
         expectedprintout= "\n AverageDataParser: input from test.txt\n\
 \n\
-     Names:       Val1       Val2       Val3 Covariance option\n\
+ Variables:       Val1       Val2       Val3 Covariance option\n\
 \n\
     Values:   171.5000   173.1000   174.5000\n\
       stat:     0.3000     0.3300     0.4000 c\n\

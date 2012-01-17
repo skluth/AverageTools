@@ -8,6 +8,7 @@ class clsqAverage:
     # C-tor, setup parser, covariances and weights:
     def __init__( self, filename ):
         self.dataparser= AverageDataParser( filename )
+        self.data= self.dataparser.getValues()
         self.solver= self.__setupSolver()
         return
 
@@ -18,11 +19,70 @@ class clsqAverage:
         return
 
     def calcAverage( self, lBlobel=False ):
+        self.lBlobel= lBlobel
         self.solver.solve( lBlobel=lBlobel )
+        return
+
+    def calcWeights( self ):
+        totalerrors= self.dataparser.getTotalErrors()
+        data= self.dataparser.getValues()
+        weights= []
+        for ival in range( len( data ) ):
+            self.data[ival]= data[ival] + 0.5*totalerrors[ival]
+            self.solver= self.__setupSolver()
+            self.calcAverage( self.lBlobel )
+            avhi= self.solver.getUpar()[0]
+            self.data[ival]= data[ival] - 0.5*totalerrors[ival]
+            self.solver= self.__setupSolver()
+            self.calcAverage( self.lBlobel )
+            avlo= self.solver.getUpar()[0]
+            self.data[ival]= data[ival]
+            weights.append( (avhi-avlo)/totalerrors[ival] )
+        self.solver= self.__setupSolver()
+        return weights
+
+    def errorAnalysis( self ):
+        hcov= self.dataparser.getCovariances()
+        totcov= self.dataparser.getTotalCovariance()
+        weightslist= self.calcWeights()
+        weights= clsq.columnMatrixFromList( weightslist )
+        systerr= 0.0
+        errors= {}
+        for errorkey in sorted( hcov.keys() ):
+            cov= hcov[errorkey]
+            error= weights.getT()*cov*weights
+            errors[errorkey]= sqrt( error )
+            if not "stat" in errorkey:
+                systerr+= error
+        errors["syst"]= sqrt( systerr )
+        toterr= weights.getT()*totcov*weights
+        errors["total"]= sqrt( toterr )
+        return errors, weightslist
+
+    def printErrorsAndWeights( self ):
+        errors, weightslist= self.errorAnalysis()
+        names= self.dataparser.getNames()
+        print " Variables:",
+        for name in names:
+            print "{0:>10s}".format( name ),
+        print
+        print "   Weights:", 
+        for weight in weightslist:
+            print "{0:10.4f}".format( weight ),
+        print
+        errorkeys= sorted( errors.keys() )
+        errorkeys.remove( "syst" )
+        errorkeys.remove( "total" )
+        print "\nError composition:"
+        for errorkey in errorkeys + [ "syst", "total" ]:
+            print "{0:>10s}: {1:10.4f}".format( stripLeadingDigits( errorkey ), 
+                                                errors[errorkey] )
+        print
         return
 
     def printResults( self ):
         self.solver.printResults()
+        print
         return
 
     def getAverage( self ):
@@ -34,7 +94,7 @@ class clsqAverage:
     def __setupSolver( self ):
 
         # Parsed data from input file
-        data= self.dataparser.getValues()
+        data= list( self.data )
         names= self.dataparser.getNames()
         herrors= self.dataparser.getErrors()
         hcovopt= self.dataparser.getCovoption()
@@ -47,7 +107,7 @@ class clsqAverage:
 
         # Setup measured parameter names:
         mpnames= {}
-        for ival in range(ndata):
+        for ival in range( ndata ):
             mpnames[ival]= names[ival]
 
         # Setup extra unmeasured parameters for correlated systematics:
