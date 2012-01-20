@@ -5,6 +5,7 @@
 # S. Kluth 12/2011
 
 import unittest
+from math import sqrt
 
 import blue
 
@@ -22,7 +23,8 @@ class blueTest( unittest.TestCase ):
         return
 
     def test_calcWeights( self ):
-        weights= self.__blue.calcWeights()
+        wm= self.__blue.calcWeightsMatrix()
+        weights= wm.ravel().tolist()[0]
         expectedweights= [ 1.3390306603614366, -0.16163492961906992, 
                            -0.17739573074236697 ]
         for weight, expectedweight in zip( weights, expectedweights ):
@@ -50,7 +52,8 @@ class blueTest( unittest.TestCase ):
         expectedkeys= expectedherrors.keys()
         self.assertEqual( sorted(keys), sorted(expectedkeys) )
         for key in keys:
-            self.assertAlmostEqual( herrors[key], expectedherrors[key] )
+            error= sqrt( herrors[key] )
+            self.assertAlmostEqual( error, expectedherrors[key] )
         return
 
     def test_printResults( self ):

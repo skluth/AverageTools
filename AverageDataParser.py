@@ -33,25 +33,41 @@ class AverageDataParser:
         tuplelist= parser.items( "Data" )
         herrors= {}
         hcovopt= {}
+        grouplist= None
         for item in tuplelist:
             key= item[0]
             value= item[1]
+            listvalue= value.split()
             if key == "names":
-                names= value
+                names= listvalue
             elif key == "values":
-                ldata= [ float(s) for s in value.split() ]
+                ldata= [ float(s) for s in listvalue ]
+            elif key == "groups":
+                grouplist= listvalue
             else:
-                listvalue= value.split()
                 hcovopt[key]= listvalue.pop()
                 herrors[key]= [ float(s) for s in listvalue ]
         for key in herrors.keys():
             if "%" in hcovopt[key]:
                 for ierr in range( len(herrors[key]) ):
                     herrors[key][ierr]*= ldata[ierr]/100.0
-        self.__names= names.split()
+        if grouplist == None:
+            grouplist= [ "a" for name in names ]
+        self.__names= names
         self.__inputs= ldata
         self.__covopts= hcovopt
         self.__errors= herrors
+        self.__groups= grouplist
+        groupset= set( grouplist )
+        ngroups= len(groupset)
+        groups= sorted( groupset )
+        groupmatrix= []
+        for g in grouplist:
+            groupmatrixrow= ngroups*[0]
+            index= groups.index( g )
+            groupmatrixrow[index]=1
+            groupmatrix.append( groupmatrixrow )
+        self.__groupmatrix= groupmatrix
         return
 
     # Read "Covariances" section if it exists:
@@ -82,7 +98,10 @@ class AverageDataParser:
         if "f" in covoption:
             cov= err1*err2
         elif "a" in covoption:
-            cov= -err1*err2
+            if iderr1 == iderr2:
+                cov= err1**2
+            else:
+                cov= -err1*err2
         elif "p" in covoption:
             cov= min( err1, err2 )**2
         elif "u" in covoption:
@@ -153,6 +172,11 @@ class AverageDataParser:
         for name in self.__names:
             print "{0:>10s}".format( name ),
         print "Covariance option"
+        if len( set( self.__groups ) ) > 1:
+            print "\n    Groups:", 
+            for groupindex in self.__groups:
+                print "{0:>10s}".format( groupindex ),
+            print
         print "\n    Values:", 
         for value in self.__inputs:
             print "{0:10.4f}".format( value ),
@@ -214,4 +238,7 @@ class AverageDataParser:
         return dict( self.__hcov )
     def getTotalCovariance( self ):
         return self.__cov.copy()
-
+    def getGroups( self ):
+        return list( self.__groups )
+    def getGroupMatrix( self ):
+        return list( self.__groupmatrix )

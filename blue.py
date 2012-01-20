@@ -14,38 +14,57 @@ class blue:
     # C-tor, setup parser, covariances and weights:
     def __init__( self, filename ):
         self.dataparser= AverageDataParser( filename )
-        self.data= self.dataparser.getValues()
         self.errors= self.dataparser.getErrors()
         self.names= self.dataparser.getNames()
         self.covopts= self.dataparser.getCovoption()
         self.correlations= self.dataparser.getCorrelations()
-        self.totalerrors= self.dataparser.getTotalErrors()
         self.hcov= self.dataparser.getCovariances()
         self.cov= self.dataparser.getTotalCovariance()
         self.inv= self.cov.getI()
+        self.groupmatrix= numpy.matrix( self.dataparser.getGroupMatrix() )
+        self.data= self.__columnVector( self.dataparser.getValues() )
+        self.totalerrors= self.__columnVector( self.dataparser.getTotalErrors() )
         return
+    def __columnVector( self, inlist ):
+        v= numpy.matrix( inlist )
+        v.shape= ( len(inlist), 1 )
+        return v
 
     # Calculate weights from inverse covariance matrix:
-    def calcWeights( self ):
-        weights= []
-        covinv= self.inv
-        jksum= covinv.sum()
-        n= covinv.shape[0]
-        for j in range( n ):
-            jsum= covinv[j].sum()
-            weights.append( jsum/jksum )
-        return weights
+    def calcWeightsMatrix( self ):
+        gm= self.groupmatrix
+        inv= self.inv
+        utvinvu= gm.getT()*inv*gm
+        utvinvuinv= utvinvu.getI()
+        wm= utvinvuinv*gm.getT()*inv
+        return wm
+
+    # Calculate average from weights and input values:
+    def calcAverage( self ):
+        wm= self.calcWeightsMatrix()
+        v= self.data
+        avg= wm*v
+        return avg
 
     # Calculate chi^2:
     def calcChisq( self ):
-        av= self.calcAverage()
-        chisq= 0.0
-        n= len( self.data )
-        for i in range( n ):
-            for j in range( n ):
-                chisq+= ( (self.data[i]-av)
-                          *(self.data[j]-av)*self.inv[i,j] )
+        avg= self.calcAverage()
+        v= self.data
+        gm= self.groupmatrix
+        inv= self.inv
+        delta= v - gm*avg
+        chisq= delta.getT()*inv*delta
         return chisq
+
+    # Calculate pulls:
+    def calcPulls( self ):
+        avg= self.calcAverage()
+        v= self.data
+        gm= self.groupmatrix
+        errors= self.totalerrors
+        delta= v - gm*avg
+        pulls= delta/errors
+        return pulls
 
     # Print the input data:
     def printInputs( self, cov=False  ):
@@ -54,9 +73,7 @@ class blue:
         if cov:
             print "\n Covariance matrices:"
             numpy.set_printoptions( linewidth=132, precision=3 )
-            keys= self.hcov.keys()
-            keys.sort()
-            for key in keys:
+            for key in sorted( self.hcov.keys() ):
                 print "{0:>10s}:".format( stripLeadingDigits( key ) )
                 print self.hcov[key]
             print "Total covariance:"
@@ -75,8 +92,11 @@ class blue:
     # Print results:
     def printResults( self ):
         print "\n Results:"
-        chisq= self.calcChisq() 
-        ndof= len(self.data)-1
+        chisq= float( self.calcChisq() )
+        wm= self.calcWeightsMatrix()
+        navg= wm.shape[0]
+        nvar= wm.shape[1]
+        ndof= nvar - navg
         chisqdof= chisq/float(ndof)
         pvalue= TMath.Prob( chisq, ndof )
         print "\n Chi^2= {0:.2f} for {1:d} d.o.f, chi^2/d.o.f= {2:.2f}, P(chi^2)= {3:.4f}".format( chisq, ndof, chisqdof, pvalue )
@@ -85,73 +105,76 @@ class blue:
             print "{0:>10s}".format( name ),
         print
         print "   Weights:", 
-        for weight in self.calcWeights():
-            print "{0:10.4f}".format( weight ),
-        print
+        for iavg in range( navg ):
+            if iavg > 0:
+                print "           ",
+            for ivar in range( nvar ):
+                print "{0:10.4f}".format( wm[iavg,ivar] ),
+            print
         print "     Pulls:", 
-        for pull in self.calcPulls():
-            print "{0:10.4f}".format( pull ),
+        pulls= self.calcPulls()
+        for ivar in range( nvar ):
+            print "{0:10.4f}".format( pulls[ivar,0] ),
         print
-        print "\n   Average: {0:10.4f}".format( self.calcAverage() )
+        avg= self.calcAverage()
+        print "\n   Average:",
+        for iavg in range( navg ):
+            print "{0:10.4f}".format( avg[iavg,0] ),
+        print
         herrs= self.errorAnalysis()
         errorlist= self.errors.keys()
         errorlist.sort()
         for errorkey in errorlist + [ "syst", "total" ]:
-            print "{0:>10s}: {1:10.4f}".format( stripLeadingDigits( errorkey ), 
-                                                herrs[errorkey] )
+            print "{0:>10s}:".format( stripLeadingDigits( errorkey ) ),
+            for iavg in range( navg ):
+                error= herrs[errorkey][iavg,iavg]
+                error= sqrt( error )
+                print "{0:10.4f}".format( error ),
+            print
+        if navg > 1:
+            print "\n Total correlations:"
+            cov= herrs["total"]
+            for i in range( navg ):
+                for j in range( navg ):
+                    corr= cov[i,j]/sqrt(cov[i,i]*cov[j,j])
+                    print "{0:7.3f}".format( corr ),
+                print
         print
         return
 
-    # Calculate average from weights and input values:
-    def calcAverage( self ):
-        weights= numpy.array( self.calcWeights() )
-        values= numpy.array( self.data )
-        av= (weights*values).sum()
-        return av
-
-    # Calculate pulls:
-    def calcPulls( self ):
-        av= self.calcAverage()
-        pulls= []
-        for value, toterr in zip( self.data, self.totalerrors ):
-            pulls.append( (value-av)/toterr )
-        return pulls
-
     # Error analysis from weights and input covariance matrices:
-    def __makeZeroMatrix( self ):
-        ndim= len( self.data )
-        return numpy.matrix( numpy.zeros( shape=(ndim,ndim) ) )
-    def errorAnalysis( self, keys=None ):
+    def __makeZeroMatrix( self, ndim ):
+        return numpy.matrix( numpy.zeros(shape=(ndim,ndim)) )
+    def errorAnalysis( self ):
         hcov= self.hcov
-        if keys == None:
-            keys= hcov.keys()
         herrs= {}
-        weights= numpy.matrix( self.calcWeights() )
+        wm= self.calcWeightsMatrix()
+        wmtranspose= wm.getT()
         # From individual error sources:
-        totsysterr= 0.0
-        summsyst= self.__makeZeroMatrix()
-        toterr= 0.0
-        summ= self.__makeZeroMatrix()
-        for key in keys:
-            errsq= weights*hcov[key]*weights.transpose()
-            if errsq >= 0.0:
-                herrs[key]= sqrt( errsq )
-            else:
-                print "Neg. error from", key, errsq
-                herrs[key]=  sqrt( -errsq )
-            toterr+= errsq
+        navg= wm.shape[0]
+        totsysterr= self.__makeZeroMatrix( navg )
+        toterr= self.__makeZeroMatrix( navg )
+        ndata= len( self.data )
+        summsyst= self.__makeZeroMatrix( ndata )
+        summ= self.__makeZeroMatrix( ndata )
+        for key in hcov.keys():
+            covv= wm*hcov[key]*wmtranspose
+            herrs[key]= covv
+            toterr+= covv
             summ+= hcov[key]
             if not "stat" in key:
-                totsysterr+= errsq
+                totsysterr+= covv
                 summsyst+= hcov[key]
-        herrs["total"]= sqrt( toterr )
-        herrs["syst"]= sqrt( totsysterr )
+        herrs["total"]= toterr
+        herrs["syst"]= totsysterr
         # From total covariance matrix:
-        errsq= weights*summ*weights.transpose()
-        herrs["totalcov"]= sqrt( errsq )
-        errsq= weights*summsyst*weights.transpose()
-        herrs["systcov"]= sqrt( errsq )
+        covv= wm*summ*wmtranspose
+        herrs["totalcov"]= covv
+        covv= wm*summsyst*wmtranspose
+        herrs["systcov"]= covv
         return herrs
+        
+
 
     # Scan correlations between p and f:
     def scanCorr( self, step ):
