@@ -17,8 +17,8 @@ class clsqAverageTest( unittest.TestCase ):
 
     def test_getAverage( self ):
         val, error= self.__ca.getAverage()
-        expectedval= 170.470854632 
-        expectederror= 2.90890715266
+        expectedval= 170.709196921
+        expectederror= 2.9668615985
         self.assertAlmostEqual( val, expectedval )
         self.assertAlmostEqual( error, expectederror )
         return
@@ -27,14 +27,13 @@ class clsqAverageTest( unittest.TestCase ):
         solver= self.__ca.getSolver()
         mpar= solver.getMpar()
         mparerrors= solver.getMparErrors()
-        expectedmpar= [ 171.52958537419838, 172.56185492503255, 
-                        172.90438268385941, 
-                        0.0, -0.28023282751832468,
-                        0.0, -0.57608656954878368 ]
-        expectedmparerrors= [ 0.29777810571747837, 1.1060041371055342, 
-                              1.4592037306182943, 
-                              1.0, 0.95035237684706109, 
-                              1.0, 0.74774682354235877 ]
+        expectedmpar= [ 171.51710348441537, 172.29268242120295, 
+                        172.55882080482172, 
+                        -0.24715555753633961, -0.41819040151052728 ]
+
+        expectedmparerrors= [ 2.6568482263780098, 2.9263187806182231, 
+                              3.1214377706098424, 
+                              0.95849417709990359, 0.81760662703871312 ]
         for par, expectedpar in zip( mpar, expectedmpar ):
             self.assertAlmostEqual( par, expectedpar )
         for par, expectedpar in zip( mparerrors, expectedmparerrors ):
@@ -45,8 +44,8 @@ class clsqAverageTest( unittest.TestCase ):
         solver= self.__ca.getSolver()
         chisq= solver.getChisq()
         ndof= solver.getNdof()
-        expectedchisq= 0.816451706341
-        expectedndof= 9
+        expectedchisq= 0.77002509362026528
+        expectedndof= 7
         self.assertAlmostEqual( chisq, expectedchisq )
         self.assertEqual( ndof, expectedndof )
         return

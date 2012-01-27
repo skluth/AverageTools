@@ -2,6 +2,7 @@
 from AverageDataParser import AverageDataParser, stripLeadingDigits
 from ConstrainedFit import clsq
 from math import sqrt, exp
+from numpy import matrix, zeros
 
 class clsqAverage:
 
@@ -23,7 +24,7 @@ class clsqAverage:
         self.solver.solve( lBlobel=lBlobel )
         return
 
-    def calcWeights( self ):
+    def calcWeightsMatrix( self ):
         totalerrors= self.dataparser.getTotalErrors()
         data= self.dataparser.getValues()
         weights= []
@@ -31,52 +32,86 @@ class clsqAverage:
             self.data[ival]= data[ival] + 0.5*totalerrors[ival]
             self.solver= self.__setupSolver()
             self.calcAverage( self.lBlobel )
-            avhi= self.solver.getUpar()[0]
+            avhi= self.solver.getUparv()
             self.data[ival]= data[ival] - 0.5*totalerrors[ival]
             self.solver= self.__setupSolver()
             self.calcAverage( self.lBlobel )
-            avlo= self.solver.getUpar()[0]
+            avlo= self.solver.getUparv()
             self.data[ival]= data[ival]
-            weights.append( (avhi-avlo)/totalerrors[ival] )
+            delta= (avhi-avlo)/totalerrors[ival]
+            weightsrow= delta.ravel().tolist()[0]
+            weights.append( weightsrow )
         self.solver= self.__setupSolver()
-        return weights
+        wm= matrix( weights )
+        wm= wm.getT()
+        return wm
 
+    def __makeZeroMatrix( self, ndim ):
+        return matrix( zeros(shape=(ndim,ndim)) )
     def errorAnalysis( self ):
         hcov= self.dataparser.getCovariances()
         totcov= self.dataparser.getTotalCovariance()
-        weightslist= self.calcWeights()
-        weights= clsq.columnMatrixFromList( weightslist )
-        systerr= 0.0
+        weightsmatrix= self.calcWeightsMatrix()
+        navg= weightsmatrix.shape[0]
+        nvar= weightsmatrix.shape[1]
+        systerr= self.__makeZeroMatrix( navg )
+        toterr= self.__makeZeroMatrix( navg )
+        systcov= self.__makeZeroMatrix( nvar )
         errors= {}
         for errorkey in sorted( hcov.keys() ):
             cov= hcov[errorkey]
-            error= weights.getT()*cov*weights
-            errors[errorkey]= sqrt( error )
+            error= weightsmatrix*cov*weightsmatrix.getT()
+            errors[errorkey]= error
+            toterr+= error
             if not "stat" in errorkey:
                 systerr+= error
-        errors["syst"]= sqrt( systerr )
-        toterr= weights.getT()*totcov*weights
-        errors["total"]= sqrt( toterr )
-        return errors, weightslist
+                systcov+= cov
+        errors["totalcov"]= toterr
+        errors["syst"]= systerr
+        toterr= weightsmatrix*totcov*weightsmatrix.getT()
+        errors["total"]= toterr
+        systerr= weightsmatrix*systcov*weightsmatrix.getT()
+        errors["systcov"]= systerr
+        return errors, weightsmatrix
 
     def printErrorsAndWeights( self ):
-        errors, weightslist= self.errorAnalysis()
+        errors, weightsmatrix= self.errorAnalysis()
         names= self.dataparser.getNames()
         print " Variables:",
         for name in names:
             print "{0:>10s}".format( name ),
         print
-        print "   Weights:", 
-        for weight in weightslist:
-            print "{0:10.4f}".format( weight ),
-        print
+        navg= weightsmatrix.shape[0]
+        nval= weightsmatrix.shape[1]
+        groups= sorted(set(self.dataparser.getGroups()))
+        for iavg in range( navg ):
+            txt= "Weights"
+            if navg > 1:
+                txt+= " "+str(groups[iavg])
+            print "{0:>11s}".format( txt+":" ),
+            for ival in range( nval ):
+                print "{0:10.4f}".format( float(weightsmatrix[iavg,ival]) ),
+            print
         errorkeys= sorted( errors.keys() )
         errorkeys.remove( "syst" )
         errorkeys.remove( "total" )
-        print "\nError composition:"
+        errorkeys.remove( "totalcov" )
+        errorkeys.remove( "systcov" )
+        print "\n Error composition:"
         for errorkey in errorkeys + [ "syst", "total" ]:
-            print "{0:>10s}: {1:10.4f}".format( stripLeadingDigits( errorkey ), 
-                                                errors[errorkey] )
+            print "{0:>10s}: ".format( stripLeadingDigits( errorkey ) ),
+            for iavg in range( navg ):
+                error= errors[errorkey]
+                print "{0:10.4f}".format( sqrt(error[iavg,iavg]) ),
+            print
+        if navg > 1:
+            print "\n Correlations:"
+            totcov= errors["total"]
+            for iavg in range( navg ):
+                for javg in range( navg ):
+                    corr= totcov[iavg,javg]/sqrt(totcov[iavg,iavg]*totcov[javg,javg])
+                    print "{0:6.3f}".format( corr ),
+                print
         print
         return
 
@@ -99,11 +134,24 @@ class clsqAverage:
         herrors= self.dataparser.getErrors()
         hcovopt= self.dataparser.getCovoption()
         correlations= self.dataparser.getCorrelations()
-        ndata= len(data)
+        groups= self.dataparser.getGroups()
+        groupmatrix= self.dataparser.getGroupMatrix()
+        ndata= len( data )
+        gm= matrix( groupmatrix )
+        datav= matrix( data )
+        datav.shape= (ndata,1)
 
-        # Initialise fit parameter with straight average and set the name:
-        upar= [ sum(data)/float(ndata) ]
-        upnames= { 0: "Average" }
+        # Initialise fit parameter(s) with straight average(s) 
+        # and set the name(s):
+        uparv= gm.getT()*datav/float(gm.shape[1])
+        upar= uparv.ravel().tolist()[0]
+        if len(upar) > 1:
+            groupset= sorted(set(groups))
+            upnames= {}
+            for i in range( len(upar) ):
+                upnames[i]= "Average " + str(groupset[i])
+        else:
+            upnames= { 0: "Average" }
 
         # Setup measured parameter names:
         mpnames= {}
@@ -111,26 +159,27 @@ class clsqAverage:
             mpnames[ival]= names[ival]
 
         # Setup extra unmeasured parameters for correlated systematics:
-        errors= len(data)*[0]
+        errors= ndata*[0]
         errorkeys= herrors.keys()
         errorkeys.sort()
         ncorrsyst= 0
         systerrormatrix= {}
         parindxmaps= {}
-        hcovm= {}
+        hcorrm= {}
         for errorkey in errorkeys:
             ierr= errorkeys.index( errorkey )
             errlist= herrors[errorkey]
             # Uncorrelated: add to errors for covariance matrix:
             if "u" in hcovopt[errorkey]:
-                for jerr in range( len(errlist) ):
-                    errors[jerr]+= errlist[jerr]**2
+                for ival in range( ndata ):
+                    errors[ival]+= errlist[ival]**2
             # Correlated: add to covariance matrix:
             elif "c" in hcovopt[errorkey]:
-                hcovm[errorkey]= correlations[errorkey]
-            # Partially correlated: add uncorrelated part of larger error
-            # to uncorrelated errors, add measured pseudo-parameter:
-            elif "p" in hcovopt[errorkey]:
+                hcorrm[errorkey]= correlations[errorkey]
+            # Globally partially correlated: add uncorrelated part of 
+            # larger error to uncorrelated errors, add measured
+            # pseudo-parameter:
+            elif "gp" in hcovopt[errorkey]:
                 data.append( 0.0 )
                 errors.append( 1.0 )
                 mpnames[ndata+ncorrsyst]= stripLeadingDigits( errorkey )
@@ -145,6 +194,18 @@ class clsqAverage:
                     indxmap[ival]= ncorrsyst
                 parindxmaps[ierr]= indxmap
                 ncorrsyst+= 1
+            # Partially correlated: add to covariance matrix:
+            # (can't model this with constraints)
+            elif "p" in hcovopt[errorkey]:
+                corrlist= []
+                for ival in range( ndata ):
+                    for jval in range( ndata ):
+                        corr= min( errlist[ival], errlist[jval] )
+                        if corr > 0.0:
+                            corr*= corr
+                            corr/= (errlist[ival]*errlist[jval])
+                        corrlist.append( corr )
+                hcorrm[errorkey]= corrlist
             # Fully correlated: add measured pseudo-parameter:
             elif "f" in hcovopt[errorkey]:
                 data.append( 0.0 )
@@ -152,14 +213,14 @@ class clsqAverage:
                 mpnames[ndata+ncorrsyst]= stripLeadingDigits( errorkey )
                 systerrormatrix[ierr]= errlist
                 indxmap= {}
-                for i in range(ndata):
+                for i in range( ndata ):
                     indxmap[i]= ncorrsyst
                 parindxmaps[ierr]= indxmap
                 ncorrsyst+= 1
             # Get correlations from matrix, add measured pseudo-
             # parameter for each independent group of variables as
             # detected by equal matrix row patterns.  Then manipulate
-            # errors according to "f" or "p" option:
+            # errors according to "f" or "gp" option:
             elif "m" in hcovopt[errorkey]:
                 covoptlist= correlations[errorkey]
                 nsq= len(covoptlist)
@@ -167,54 +228,70 @@ class clsqAverage:
                 covoptmatrix= []
                 for i in range( dim ):
                     covoptmatrix.append( covoptlist[dim*i:dim*(i+1)] )
-                rowpatterns= []
-                indxmap= {}
-                errlist2= errlist
-                for row in covoptmatrix:
-                    if row not in rowpatterns:
-                        rowpatterns.append( row )
-                        data.append( 0.0 )
-                        errors.append( 1.0 )
-                        mpnames[ndata+ncorrsyst]= stripLeadingDigits( errorkey )
-                        valuenumbers= ""
-                        for icovopt in range(len(row)):
-                            if "f" in row[icovopt] or "p" in row[icovopt]:
-                                indxmap[icovopt]= ncorrsyst
-                                valuenumbers+= str(icovopt)
-                        if len(valuenumbers) > 0:
-                            mpnames[ndata+ncorrsyst]+= "_" + valuenumbers
-                        if "p" in row:
-                            minerr= max(errlist)
-                            for ival in range(len(row)):
-                                if "p" in row[ival]:
-                                    minerr= min( minerr, errlist[ival] )
-                            for ival in range(len(row)):
-                                if "p" in row[ival]:
-                                    errors[ival]+= errlist[ival]**2 - minerr**2
-                                    errlist2[ival]= minerr
-                        ncorrsyst+= 1
-                errlist= errlist2
-                systerrormatrix[ierr]= errlist
-                parindxmaps[ierr]= indxmap
+                if( "p" in covoptlist and
+                    not ( "f" in covoptlist or "gp" in covoptlist ) ):
+                    corrlist= []
+                    for ival in range( ndata ):
+                        for jval in range( ndata ):
+                            if covoptmatrix[ival][jval] == "p":
+                                corr= min( errlist[ival], errlist[jval] )
+                                if corr > 0.0:
+                                    corr*= corr
+                                    corr/= (errlist[ival]*errlist[jval])
+                            elif covoptmatrix[ival][jval] == "u":
+                                corr= 0.0
+                            corrlist.append( corr )
+                    hcorrm[errorkey]= corrlist
+                elif( ( "f" in covoptlist or "gp" in covoptlist ) and 
+                      not "p" in covoptlist ):
+                    rowpatterns= []
+                    indxmap= {}
+                    errlist2= errlist
+                    for row in covoptmatrix:
+                        if row not in rowpatterns:
+                            rowpatterns.append( row )
+                            data.append( 0.0 )
+                            errors.append( 1.0 )
+                            mpnames[ndata+ncorrsyst]= stripLeadingDigits( errorkey )
+                            valuenumbers= ""
+                            for icovopt in range(len(row)):
+                                if "f" in row[icovopt] or "gp" in row[icovopt]:
+                                    indxmap[icovopt]= ncorrsyst
+                                    valuenumbers+= str(icovopt)
+                            if len(valuenumbers) > 0:
+                                mpnames[ndata+ncorrsyst]+= "_" + valuenumbers
+                            if "gp" in row:
+                                minerr= max(errlist)
+                                for ival in range(len(row)):
+                                    if "gp" in row[ival]:
+                                        minerr= min( minerr, errlist[ival] )
+                                for ival in range(len(row)):
+                                    if "gp" in row[ival]:
+                                        errors[ival]+= errlist[ival]**2 - minerr**2
+                                        errlist2[ival]= minerr
+                            ncorrsyst+= 1
+                    errlist= errlist2
+                    systerrormatrix[ierr]= errlist
+                    parindxmaps[ierr]= indxmap
 
         # Setup covariance matrix:
-        for ierr in range( ndata ):
-            errors[ierr]= sqrt( errors[ierr] )
+        for ival in range( ndata ):
+            errors[ival]= sqrt( errors[ival] )
         covm= clsq.covmFromErrors( errors )
-        for key in hcovm.keys():
+        for key in hcorrm.keys():
             errorlist= herrors[key]
-            corrlist= hcovm[key]
-            nerr= len(errorlist)
-            for i in range( nerr ):
-                for j in range( nerr ):
-                    ii= i*nerr + j
-                    covm[i][j]+= errorlist[i]*errorlist[j]*corrlist[ii]
+            corrlist= hcorrm[key]
+            for ival in range( ndata ):
+                for jval in range( ndata ):
+                    ii= ival*ndata + jval
+                    covm[ival][jval]+= errorlist[ival]*errorlist[jval]*corrlist[ii]
 
         # Constraints function for average:
         def avgConstrFun( mpar, upar ):
+            umpar= gm*upar
             constraints= []
             for ival in range( ndata ):
-                constraint= - upar[0]
+                constraint= - umpar[ival]
                 for ierr in parindxmaps.keys():
                     covopt= hcovopt[errorkeys[ierr]]
                     indxmap= parindxmaps[ierr]

@@ -61,6 +61,9 @@ class AverageDataParser:
         groupset= set( grouplist )
         ngroups= len(groupset)
         groups= sorted( groupset )
+#        groups= []
+#        [ groups.append( g ) for g in grouplist if groups.count( g ) == 0 ]
+#        ngroups= len(groups)
         groupmatrix= []
         for g in grouplist:
             groupmatrixrow= ngroups*[0]
