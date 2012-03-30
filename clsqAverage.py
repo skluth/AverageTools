@@ -308,6 +308,7 @@ class clsqAverage:
 
         # Create solver and return it:
         solver= clsq.clsqSolver( data, covm, upar, avgConstrFun,
-                                 uparnames=upnames, mparnames=mpnames )
+                                 uparnames=upnames, mparnames=mpnames,
+                                 ndof=ndata-len(upar) )
         return solver
 
