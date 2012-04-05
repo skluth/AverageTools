@@ -61,9 +61,6 @@ class AverageDataParser:
         groupset= set( grouplist )
         ngroups= len(groupset)
         groups= sorted( groupset )
-#        groups= []
-#        [ groups.append( g ) for g in grouplist if groups.count( g ) == 0 ]
-#        ngroups= len(groups)
         groupmatrix= []
         for g in grouplist:
             groupmatrixrow= ngroups*[0]
@@ -120,21 +117,27 @@ class AverageDataParser:
             lcov= []
             errors= self.__errors[errorkey] 
             covoption= self.__covopts[errorkey]
-            iderr1= 0
             if "g" in covoption:
                 minerr= min( errors )
+            if "gpr" in covoption:
+                relerrors= []
+                for ierr in range(len(errors)):
+                    relerrors.append( errors[ierr]/self.__inputs[ierr] )
+                minrelerr= min( relerrors )
+            iderr1= 0
             for err1 in errors:
-                iderr1+= 1
                 iderr2= 0
                 for err2 in errors:
-                    iderr2+= 1
                     # Global options, all covariances according to
                     # same rule gp, p, f or u:
                     if "gp" in covoption:
                         if iderr1 == iderr2:
                             covelement= err1**2
                         else:
-                            covelement= minerr**2
+                            if "r" in covoption:
+                                covelement= minrelerr**2*self.__inputs[iderr1]*self.__inputs[iderr2]
+                            else:
+                                covelement= minerr**2
                     # Direct calculation from "f", "p" or "u":
                     elif( "f" in covoption or "p" in covoption or
                           "u" in covoption or "a" in covoption ):
@@ -158,6 +161,8 @@ class AverageDataParser:
                         print "Option", covoption, "not recognised"
                         return
                     lcov.append( covelement )
+                    iderr2+= 1
+                iderr1+= 1
             m= self.__makeMatrixFromList( lcov )
             cov+= m
             hcov[errorkey]= m

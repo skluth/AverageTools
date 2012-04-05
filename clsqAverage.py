@@ -26,22 +26,20 @@ class clsqAverage:
 
     def calcWeightsMatrix( self ):
         totalerrors= self.dataparser.getTotalErrors()
-        data= self.dataparser.getValues()
+        data= self.data
         weights= []
+        solverdata= self.solver.getData()
         for ival in range( len( data ) ):
-            self.data[ival]= data[ival] + 0.5*totalerrors[ival]
-            self.solver= self.__setupSolver()
+            solverdata[ival]= data[ival] + 0.5*totalerrors[ival]
             self.calcAverage( self.lBlobel )
             avhi= self.solver.getUparv()
-            self.data[ival]= data[ival] - 0.5*totalerrors[ival]
-            self.solver= self.__setupSolver()
+            solverdata[ival]= data[ival] - 0.5*totalerrors[ival]
             self.calcAverage( self.lBlobel )
             avlo= self.solver.getUparv()
-            self.data[ival]= data[ival]
             delta= (avhi-avlo)/totalerrors[ival]
             weightsrow= delta.ravel().tolist()[0]
             weights.append( weightsrow )
-        self.solver= self.__setupSolver()
+            solverdata[ival]= data[ival]
         wm= matrix( weights )
         wm= wm.getT()
         return wm
@@ -130,6 +128,7 @@ class clsqAverage:
 
         # Parsed data from input file
         data= list( self.data )
+        originaldata= self.dataparser.getValues()
         names= self.dataparser.getNames()
         herrors= self.dataparser.getErrors()
         hcovopt= self.dataparser.getCovoption()
@@ -183,11 +182,23 @@ class clsqAverage:
                 data.append( 0.0 )
                 errors.append( 1.0 )
                 mpnames[ndata+ncorrsyst]= stripLeadingDigits( errorkey )
-                minerr= min( errlist )
                 errlist2= []
-                for ival in range( ndata ):
-                    errors[ival]+= errlist[ival]**2 - minerr**2
-                    errlist2.append( minerr )
+
+                if "r" in hcovopt[errorkey]:
+                    relerr= []
+                    for ival in range( ndata ):
+                        relerr.append( errlist[ival]/data[ival] )
+                    minrelerr= min( relerr )
+                    for ival in range( ndata ):
+                        correrr= minrelerr*data[ival]
+                        errors[ival]+= errlist[ival]**2 - correrr**2
+                        errlist2.append( correrr )
+                else:
+                    minerr= min( errlist )
+                    for ival in range( ndata ):
+                        errors[ival]+= errlist[ival]**2 - minerr**2
+                        errlist2.append( minerr )
+
                 systerrormatrix[ierr]= errlist2
                 indxmap= {}
                 for ival in range( ndata ):
@@ -299,8 +310,11 @@ class clsqAverage:
                         parindx= indxmap[ival] + ndata
                         term= mpar[parindx]*systerrormatrix[ierr][ival]
                         if "r" in covopt:
-                            constraint*= exp( term/data[ival] )
+                            # linearised exponential a la Blobel for 
+                            # multiplicative rel. error
+                            constraint*= ( 1.0 + term/originaldata[ival] )
                         else:
+                            # Additive error:
                             constraint+= term
                 constraint+= mpar[ival]
                 constraints.append( constraint )
