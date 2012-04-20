@@ -24,20 +24,20 @@ class clsqAverage:
         self.solver.solve( lBlobel=lBlobel )
         return
 
-    def calcWeightsMatrix( self ):
+    def calcWeightsMatrix( self, scf=10.0 ):
         totalerrors= self.dataparser.getTotalErrors()
         data= self.data
         weights= []
         solverdata= self.solver.getData()
         for ival in range( len( data ) ):
-            solverdata[ival]= data[ival] + 0.5*totalerrors[ival]
+            solverdata[ival]= data[ival] + 0.5*totalerrors[ival]/scf
             self.calcAverage( self.lBlobel )
             avhi= self.solver.getUparv()
-            solverdata[ival]= data[ival] - 0.5*totalerrors[ival]
+            solverdata[ival]= data[ival] - 0.5*totalerrors[ival]/scf
             self.calcAverage( self.lBlobel )
             avlo= self.solver.getUparv()
-            delta= (avhi-avlo)/totalerrors[ival]
-            weightsrow= delta.ravel().tolist()[0]
+            delta= (avhi-avlo)/totalerrors[ival]*scf
+            weightsrow= [ item for item in delta.flat ]
             weights.append( weightsrow )
             solverdata[ival]= data[ival]
         wm= matrix( weights )
@@ -143,7 +143,7 @@ class clsqAverage:
         # Initialise fit parameter(s) with straight average(s) 
         # and set the name(s):
         uparv= gm.getT()*datav/float(gm.shape[1])
-        upar= uparv.ravel().tolist()[0]
+        upar= [ par for par in uparv.flat ]
         if len(upar) > 1:
             groupset= sorted(set(groups))
             upnames= {}
@@ -158,7 +158,11 @@ class clsqAverage:
             mpnames[ival]= names[ival]
 
         # Setup extra unmeasured parameters for correlated systematics:
-        errors= ndata*[0]
+        dataerrors= ndata*[0]
+
+        extrapars= []
+        extraparerrors= []
+
         errorkeys= herrors.keys()
         errorkeys.sort()
         ncorrsyst= 0
@@ -171,7 +175,7 @@ class clsqAverage:
             # Uncorrelated: add to errors for covariance matrix:
             if "u" in hcovopt[errorkey]:
                 for ival in range( ndata ):
-                    errors[ival]+= errlist[ival]**2
+                    dataerrors[ival]+= errlist[ival]**2
             # Correlated: add to covariance matrix:
             elif "c" in hcovopt[errorkey]:
                 hcorrm[errorkey]= correlations[errorkey]
@@ -179,8 +183,8 @@ class clsqAverage:
             # larger error to uncorrelated errors, add measured
             # pseudo-parameter:
             elif "gp" in hcovopt[errorkey]:
-                data.append( 0.0 )
-                errors.append( 1.0 )
+                extrapars.append( 0.0 )
+                extraparerrors.append( 1.0 )
                 mpnames[ndata+ncorrsyst]= stripLeadingDigits( errorkey )
                 errlist2= []
 
@@ -191,12 +195,12 @@ class clsqAverage:
                     minrelerr= min( relerr )
                     for ival in range( ndata ):
                         correrr= minrelerr*data[ival]
-                        errors[ival]+= errlist[ival]**2 - correrr**2
+                        dataerrors[ival]+= errlist[ival]**2 - correrr**2
                         errlist2.append( correrr )
                 else:
                     minerr= min( errlist )
                     for ival in range( ndata ):
-                        errors[ival]+= errlist[ival]**2 - minerr**2
+                        dataerrors[ival]+= errlist[ival]**2 - minerr**2
                         errlist2.append( minerr )
 
                 systerrormatrix[ierr]= errlist2
@@ -219,8 +223,8 @@ class clsqAverage:
                 hcorrm[errorkey]= corrlist
             # Fully correlated: add measured pseudo-parameter:
             elif "f" in hcovopt[errorkey]:
-                data.append( 0.0 )
-                errors.append( 1.0 )
+                extrapars.append( 0.0 )
+                extraparerrors.append( 1.0 )
                 mpnames[ndata+ncorrsyst]= stripLeadingDigits( errorkey )
                 systerrormatrix[ierr]= errlist
                 indxmap= {}
@@ -261,8 +265,8 @@ class clsqAverage:
                     for row in covoptmatrix:
                         if row not in rowpatterns:
                             rowpatterns.append( row )
-                            data.append( 0.0 )
-                            errors.append( 1.0 )
+                            extrapars.append( 0.0 )
+                            extraparerrors.append( 1.0 )
                             mpnames[ndata+ncorrsyst]= stripLeadingDigits( errorkey )
                             valuenumbers= ""
                             for icovopt in range(len(row)):
@@ -278,7 +282,7 @@ class clsqAverage:
                                         minerr= min( minerr, errlist[ival] )
                                 for ival in range(len(row)):
                                     if "gp" in row[ival]:
-                                        errors[ival]+= errlist[ival]**2 - minerr**2
+                                        dataerrors[ival]+= errlist[ival]**2 - minerr**2
                                         errlist2[ival]= minerr
                             ncorrsyst+= 1
                     errlist= errlist2
@@ -286,6 +290,7 @@ class clsqAverage:
                     parindxmaps[ierr]= indxmap
 
         # Setup covariance matrix:
+        errors= dataerrors + extraparerrors
         for ival in range( ndata ):
             errors[ival]= sqrt( errors[ival] )
         covm= clsq.covmFromErrors( errors )
@@ -321,7 +326,7 @@ class clsqAverage:
             return constraints
 
         # Create solver and return it:
-        solver= clsq.clsqSolver( data, covm, upar, avgConstrFun,
+        solver= clsq.clsqSolver( data+extrapars, covm, upar, avgConstrFun,
                                  uparnames=upnames, mparnames=mpnames,
                                  ndof=ndata-len(upar) )
         return solver

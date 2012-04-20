@@ -45,9 +45,19 @@ class clsqAverageTest( unittest.TestCase ):
         chisq= solver.getChisq()
         ndof= solver.getNdof()
         expectedchisq= 0.77002509362026528
-        expectedndof= 7
+        expectedndof= 2
         self.assertAlmostEqual( chisq, expectedchisq )
         self.assertEqual( ndof, expectedndof )
+        return
+
+    def test_weights( self ):
+        weightsMatrix= self.__ca.calcWeightsMatrix()
+        weightsList= [ weight for weight in weightsMatrix.flat ]
+        expectedWeights= [ 1.3390306603764943, 
+                           -0.16163492965394771, 
+                           -0.17739573072419634 ]
+        for weight, expectedWeight in zip( weightsList, expectedWeights ):
+            self.assertAlmostEqual( weight, expectedWeight )
         return
 
 
