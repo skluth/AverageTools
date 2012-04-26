@@ -124,6 +124,18 @@ class clsqAverage:
     def getSolver( self ):
         return self.solver
 
+    def __addParameter( self, extrapars, extraparerrors, mpnames,
+                        ndata, ncorrsyst, errorkey, parindxmaps, ierr ):
+        extrapars.append( 0.0 )
+        extraparerrors.append( 1.0 )
+        mpnames[ndata+ncorrsyst]= stripLeadingDigits( errorkey )
+        indxmap= {}
+        for ival in range( ndata ):
+            indxmap[ival]= ncorrsyst
+        parindxmaps[ierr]= indxmap
+        ncorrsyst+= 1
+        return
+
     def __setupSolver( self ):
 
         # Parsed data from input file
@@ -158,110 +170,32 @@ class clsqAverage:
             mpnames[ival]= names[ival]
 
         # Setup extra unmeasured parameters for correlated systematics:
-        dataerrors= ndata*[0]
-
         extrapars= []
         extraparerrors= []
-
-        errorkeys= herrors.keys()
-        errorkeys.sort()
+        errorkeys= sorted( herrors.keys() )
         ncorrsyst= 0
-        systerrormatrix= {}
         parindxmaps= {}
-        hcorrm= {}
         for errorkey in errorkeys:
             ierr= errorkeys.index( errorkey )
             errlist= herrors[errorkey]
-            # Uncorrelated: add to errors for covariance matrix:
-            if "u" in hcovopt[errorkey]:
-                for ival in range( ndata ):
-                    dataerrors[ival]+= errlist[ival]**2
-            # Correlated: add to covariance matrix:
-            elif "c" in hcovopt[errorkey]:
-                hcorrm[errorkey]= correlations[errorkey]
-            # Globally partially correlated: add uncorrelated part of 
-            # larger error to uncorrelated errors, add measured
-            # pseudo-parameter:
-            elif "gp" in hcovopt[errorkey]:
-                extrapars.append( 0.0 )
-                extraparerrors.append( 1.0 )
-                mpnames[ndata+ncorrsyst]= stripLeadingDigits( errorkey )
-                errlist2= []
-
-                if "r" in hcovopt[errorkey]:
-                    relerr= []
-                    for ival in range( ndata ):
-                        relerr.append( errlist[ival]/data[ival] )
-                    minrelerr= min( relerr )
-                    for ival in range( ndata ):
-                        correrr= minrelerr*data[ival]
-                        dataerrors[ival]+= errlist[ival]**2 - correrr**2
-                        errlist2.append( correrr )
-                else:
-                    minerr= min( errlist )
-                    for ival in range( ndata ):
-                        dataerrors[ival]+= errlist[ival]**2 - minerr**2
-                        errlist2.append( minerr )
-
-                systerrormatrix[ierr]= errlist2
-                indxmap= {}
-                for ival in range( ndata ):
-                    indxmap[ival]= ncorrsyst
-                parindxmaps[ierr]= indxmap
-                ncorrsyst+= 1
-            # Partially correlated: add to covariance matrix:
-            # (can't model this with constraints)
-            elif "p" in hcovopt[errorkey]:
-                corrlist= []
-                for ival in range( ndata ):
-                    for jval in range( ndata ):
-                        corr= min( errlist[ival], errlist[jval] )
-                        if corr > 0.0:
-                            corr*= corr
-                            corr/= (errlist[ival]*errlist[jval])
-                        corrlist.append( corr )
-                hcorrm[errorkey]= corrlist
-            # Fully correlated: add measured pseudo-parameter:
-            elif "f" in hcovopt[errorkey]:
-                extrapars.append( 0.0 )
-                extraparerrors.append( 1.0 )
-                mpnames[ndata+ncorrsyst]= stripLeadingDigits( errorkey )
-                systerrormatrix[ierr]= errlist
-                indxmap= {}
-                for i in range( ndata ):
-                    indxmap[i]= ncorrsyst
-                parindxmaps[ierr]= indxmap
-                ncorrsyst+= 1
+            # Globally partially correlated: add measured pseudo-parameter:
+            if( "gp" in hcovopt[errorkey] or "f" in hcovopt[errorkey] ):
+                self.__addParameter( extrapars, extraparerrors, mpnames,
+                                     ndata, ncorrsyst, errorkey, 
+                                     parindxmaps, ierr )
             # Get correlations from matrix, add measured pseudo-
             # parameter for each independent group of variables as
-            # detected by equal matrix row patterns.  Then manipulate
-            # errors according to "f" or "gp" option:
+            # detected by equal matrix row patterns.  
             elif "m" in hcovopt[errorkey]:
                 covoptlist= correlations[errorkey]
                 nsq= len(covoptlist)
                 dim= int(sqrt(nsq))
-                covoptmatrix= []
-                for i in range( dim ):
-                    covoptmatrix.append( covoptlist[dim*i:dim*(i+1)] )
-                if( "p" in covoptlist and
-                    not ( "f" in covoptlist or "gp" in covoptlist ) ):
-                    corrlist= []
-                    for ival in range( ndata ):
-                        for jval in range( ndata ):
-                            if covoptmatrix[ival][jval] == "p":
-                                corr= min( errlist[ival], errlist[jval] )
-                                if corr > 0.0:
-                                    corr*= corr
-                                    corr/= (errlist[ival]*errlist[jval])
-                            elif covoptmatrix[ival][jval] == "u":
-                                corr= 0.0
-                            corrlist.append( corr )
-                    hcorrm[errorkey]= corrlist
-                elif( ( "f" in covoptlist or "gp" in covoptlist ) and 
-                      not "p" in covoptlist ):
+                covoptmatrix= [ covoptlist[dim*i:dim*(i+1)] 
+                                for i in range(dim) ]
+                if( ( "f" in covoptlist or "gp" in covoptlist ) and 
+                    not "p" in covoptlist ):
                     rowpatterns= []
                     indxmap= {}
-                    errlist2= errlist
                     for row in covoptmatrix:
                         if row not in rowpatterns:
                             rowpatterns.append( row )
@@ -275,32 +209,23 @@ class clsqAverage:
                                     valuenumbers+= str(icovopt)
                             if len(valuenumbers) > 0:
                                 mpnames[ndata+ncorrsyst]+= "_" + valuenumbers
-                            if "gp" in row:
-                                minerr= max(errlist)
-                                for ival in range(len(row)):
-                                    if "gp" in row[ival]:
-                                        minerr= min( minerr, errlist[ival] )
-                                for ival in range(len(row)):
-                                    if "gp" in row[ival]:
-                                        dataerrors[ival]+= errlist[ival]**2 - minerr**2
-                                        errlist2[ival]= minerr
                             ncorrsyst+= 1
-                    errlist= errlist2
-                    systerrormatrix[ierr]= errlist
                     parindxmaps[ierr]= indxmap
 
-        # Setup covariance matrix:
-        errors= dataerrors + extraparerrors
-        for ival in range( ndata ):
-            errors[ival]= sqrt( errors[ival] )
-        covm= clsq.covmFromErrors( errors )
-        for key in hcorrm.keys():
-            errorlist= herrors[key]
-            corrlist= hcorrm[key]
-            for ival in range( ndata ):
-                for jval in range( ndata ):
-                    ii= ival*ndata + jval
-                    covm[ival][jval]+= errorlist[ival]*errorlist[jval]*corrlist[ii]
+        # Get matrix of systematic errors for constraints:
+        systerrormatrix= self.dataparser.getSysterrorMatrix()
+
+        # Get reduced covariance matrix and add "measured parameter"
+        # errors to diagonal:
+        covm= self.dataparser.getTotalReducedCovarianceAslist()
+        for line in covm:
+            for extraparerror in extraparerrors:
+                line.append( 0.0 )
+        nextrapar= len(extrapars)
+        for ipar in range(nextrapar):
+            row= (ndata+nextrapar)*[ 0.0 ]
+            row[ndata+ipar]= extraparerrors[ipar]
+            covm.append( row )
 
         # Constraints function for average:
         def avgConstrFun( mpar, upar ):

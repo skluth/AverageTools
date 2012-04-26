@@ -94,7 +94,8 @@ class AverageDataParser:
         ndim= len( self.__inputs )
         m.shape= ( ndim, ndim )
         return m
-    def __calcCovariance( self, covoption, err1, err2, iderr1, iderr2 ):
+    def __calcCovariance( self, covoption, err1, err2,
+                          iderr1, iderr2 ):
         if "f" in covoption:
             cov= err1*err2
         elif "a" in covoption:
@@ -111,63 +112,106 @@ class AverageDataParser:
                 cov= 0.0
         return cov
     def __makeCovariances( self ):
+
         hcov= {}
+        hredcov= {}
+        systerrormatrix= {}
         cov= self.__makeZeroMatrix()
-        for errorkey in self.__errors.keys():
+        redcov= self.__makeZeroMatrix()
+        errorkeys= sorted( self.__errors.keys() )
+        for errorkey in errorkeys:
+            nerr= errorkeys.index( errorkey )
             lcov= []
+            lredcov= []
             errors= self.__errors[errorkey] 
+            nerrors= len(errors)
             covoption= self.__covopts[errorkey]
-            if "g" in covoption:
-                minerr= min( errors )
+            # Global options, all covariances according to
+            # same rule gp, p, f or u:
             if "gpr" in covoption:
-                relerrors= []
-                for ierr in range(len(errors)):
-                    relerrors.append( errors[ierr]/self.__inputs[ierr] )
-                minrelerr= min( relerrors )
-            iderr1= 0
-            for err1 in errors:
-                iderr2= 0
-                for err2 in errors:
-                    # Global options, all covariances according to
-                    # same rule gp, p, f or u:
-                    if "gp" in covoption:
+                minrelerr= min( [ err/value for err, value in 
+                                  zip( errors, self.__inputs ) ] )
+                systerrlist= []
+                for iderr1 in range(nerrors):
+                    for iderr2 in range(nerrors):
                         if iderr1 == iderr2:
-                            covelement= err1**2
+                            covelement= errors[iderr1]**2
+                            redcovelement= errors[iderr1]**2 - (minrelerr*self.__inputs[iderr1])**2
+                            redcovelement= max( redcovelement, 0.0 )
                         else:
-                            if "r" in covoption:
-                                covelement= minrelerr**2*self.__inputs[iderr1]*self.__inputs[iderr2]
-                            else:
-                                covelement= minerr**2
-                    # Direct calculation from "f", "p" or "u":
-                    elif( "f" in covoption or "p" in covoption or
-                          "u" in covoption or "a" in covoption ):
-                        covelement= self.__calcCovariance( covoption,
-                                                           err1, err2, 
-                                                           iderr1, iderr2 )
-                    # Covariances from correlations and errors:
-                    elif "c" in covoption:
-                        idx= len( lcov )
-                        corrlist= self.__correlations[errorkey]
-                        covelement= corrlist[idx]*err1*err2
-                    # Covariances from options:
-                    elif "m" in covoption:
-                        idx= len( lcov )
-                        mcovopts= self.__correlations[errorkey]
-                        mcovopt= mcovopts[idx]
-                        covelement= self.__calcCovariance( mcovopt,
-                                                           err1, err2, 
-                                                           iderr1, iderr2 )
-                    else:
-                        print "Option", covoption, "not recognised"
-                        return
-                    lcov.append( covelement )
-                    iderr2+= 1
-                iderr1+= 1
+                            covelement= minrelerr**2*self.__inputs[iderr1]*self.__inputs[iderr2]                            
+                            redcovelement= 0.0
+                        lcov.append( covelement )
+                        lredcov.append( redcovelement )
+                    systerrlist.append( minrelerr*self.__inputs[iderr1] )
+                systerrormatrix[nerr]= systerrlist
+            elif( "gp" in covoption ):
+                minerr= min( errors )
+                systerrlist= []
+                for iderr1 in range(nerrors):
+                    for iderr2 in range(nerrors):
+                        if iderr1 == iderr2:
+                            covelement= errors[iderr1]**2
+                            redcovelement= errors[iderr1]**2 - minerr**2
+                        else:
+                            covelement= minerr**2
+                            redcovelement= 0.0
+                        lcov.append( covelement )
+                        lredcov.append( redcovelement )
+                        systerrlist.append( minerr )
+                systerrormatrix[nerr]= systerrlist
+            # Direct calculation from "f", "p" or "u":
+            elif( "f" in covoption or "p" in covoption or
+                  "u" in covoption or "a" in covoption ):
+                lcov= [ self.__calcCovariance( covoption, 
+                                               errors[iderr1], errors[iderr2],
+                                               iderr1, iderr2 )
+                        for iderr1 in range(nerrors) 
+                        for iderr2 in range(nerrors) ]
+                if( "f" in covoption ):
+                    systerrormatrix[nerr]= errors
+                    lredcov= len(errors)**2*[0.0]
+                else:
+                    lredcov= lcov
+            # Covariances from correlations and errors:
+            elif "c" in covoption:
+                corrlist= self.__correlations[errorkey]
+                err1err2= [ err1*err2 for err1 in errors for err2 in errors ]
+                lcov= [ corr*errprod 
+                        for corr, errprod in zip( corrlist, err1err2 ) ]
+                lredcov= lcov
+            # Covariances from options:
+            elif "m" in covoption:
+                mcovopts= self.__correlations[errorkey]
+                err1err2= [ (errors[iderr1],errors[iderr2],iderr1,iderr2) 
+                            for iderr1 in range(nerrors)
+                            for iderr2 in range(nerrors) ]
+                lcov= [ self.__calcCovariance( mcovopt, err[0], err[1],
+                                               err[2], err[3] )
+                        for mcovopt, err in zip( mcovopts, err1err2 ) ]
+                if( "f" in mcovopts and not "p" in mcovopts ):
+                    systerrormatrix[nerr]= errors
+                    lredcov= len(errors)**2*[0.0]
+                else:
+                    lredcov= lcov
+            # Error in option:
+            else:
+                print "Option", covoption, "not recognised"
+                return
+
             m= self.__makeMatrixFromList( lcov )
+            redm= self.__makeMatrixFromList( lredcov )
             cov+= m
+            redcov+= redm
             hcov[errorkey]= m
+            hredcov[errorkey]= redm
+
         self.__hcov= hcov
+        self.__hredcov= hredcov
         self.__cov= cov
+        self.__redcov= redcov
+        self.__systerrormatrix= systerrormatrix
+
         return
 
     # Print inputs:
@@ -250,3 +294,10 @@ class AverageDataParser:
         return list( self.__groups )
     def getGroupMatrix( self ):
         return list( self.__groupmatrix )
+    def getSysterrorMatrix( self ):
+        return dict( self.__systerrormatrix )
+    def getReducedCovariances( self ):
+        return dict( self.__hredcov )
+    def getTotalReducedCovarianceAslist( self ):
+        return self.__redcov.tolist()
+
