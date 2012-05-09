@@ -298,6 +298,8 @@ class AverageDataParser:
         return dict( self.__systerrormatrix )
     def getReducedCovariances( self ):
         return dict( self.__hredcov )
+    def getTotalReducedCovariance( self ):
+        return self.__redcov.copy()
     def getTotalReducedCovarianceAslist( self ):
         return self.__redcov.tolist()
 
