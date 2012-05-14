@@ -1,0 +1,9 @@
+
+# Example 6 from Valassi paper
+
+[Data]
+Names:    BeA    BeB BtauA  BtauB
+Values: 10.50  13.50  9.50  14.00
+Groups:     a      a     b      b
+01stat:  1.0    0.21  3.0    0.21 u
+02exp:   0.0    2.99  0.0    2.99 a
