@@ -6,6 +6,7 @@
 import unittest
 
 from AverageDataParser import AverageDataParser, stripLeadingDigits
+from numpy import matrix
 
 
 class AverageDataParserTest( unittest.TestCase ):
@@ -82,6 +83,86 @@ class AverageDataParserTest( unittest.TestCase ):
         self.assertEqual( sorted(keys1), sorted(keys2) )
         return
 
+    def test_getCovariances( self ):
+        covariances= self.__parser.getCovariances()
+        expectedCovariances= { '00stat': matrix( [ [ 0.09, 0.0,  0.0 ],
+                                                   [ 0.0, 0.1089, 0.0 ],
+                                                   [ 0.0, 0.0, 0.16 ] ] ), 
+                               '01err1': matrix( [ [ 1.21, 1.21, 1.21 ],
+                                                   [ 1.21, 1.69, 1.69 ],
+                                                   [ 1.21, 1.69, 2.25 ] ] ), 
+                               '03err3': matrix( [ [ 5.76, 5.76, 5.76 ],
+                                                   [ 5.76, 9.61, 9.61 ],
+                                                   [ 5.76, 9.61, 12.25 ] ] ),
+                               '02err2': matrix( [ [ 0.81, 1.35, 1.71 ],
+                                                   [ 1.35, 2.25, 2.85 ],
+                                                   [ 1.71, 2.85, 3.61 ] ] ), 
+                               '04err4': matrix( [ [ 1.96, 4.06, 4.62 ],
+                                                   [ 4.06, 8.41, 9.57 ],
+                                                   [ 4.62, 9.57, 10.89 ] ] ) }
+        self.__compareKeys( covariances, expectedCovariances )
+        for key in covariances.keys():
+            for cov, expectedcov in zip( covariances[key].flat,
+                                         expectedCovariances[key].flat ):
+                self.assertAlmostEqual( cov, expectedcov )
+        return
+
+    def test_getTotalCovariance( self ):
+        totalcov= self.__parser.getTotalCovariance()
+        expectedtotalcov= matrix( [ [ 9.83, 12.38, 13.3 ],
+                                    [ 12.38, 22.0689, 23.72 ],
+                                    [ 13.3 , 23.72, 29.16 ] ] )
+        for cov, expectedcov in zip( totalcov.flat,
+                                     expectedtotalcov.flat ):
+            self.assertAlmostEqual( cov, expectedcov )
+        return
+
+    def test_getSysterrorMatrix( self ):
+        systerrmatrix= self.__parser.getSysterrorMatrix()
+        expectedsysterrmatrix= { 2: [ 0.9, 1.5, 1.9 ], 
+                                 4: [ 1.4, 2.9, 3.3 ] }
+        self.__compareKeys( systerrmatrix, expectedsysterrmatrix )
+        for key in systerrmatrix.keys():
+            for systerr, expectedsysterr in zip( systerrmatrix[key], 
+                                                 expectedsysterrmatrix[key] ):
+                self.assertAlmostEqual( systerr, expectedsysterr ) 
+        return
+
+    def test_getReducedCovariances( self ):
+        redcov= self.__parser.getReducedCovariances()
+        expectedredcov= { '00stat': matrix([[ 0.09  ,  0.    ,  0.    ],
+                                            [ 0.    ,  0.1089,  0.    ],
+                                            [ 0.    ,  0.    ,  0.16  ]]), 
+                          '01err1': matrix([[ 1.21,  1.21,  1.21],
+                                            [ 1.21,  1.69,  1.69],
+                                            [ 1.21,  1.69,  2.25]]), 
+                          '02err2': matrix([[ 0.,  0.,  0.],
+                                            [ 0.,  0.,  0.],
+                                            [ 0.,  0.,  0.]]), 
+                          '03err3': matrix([[  5.76,   5.76,   5.76],
+                                            [  5.76,   9.61,   9.61],
+                                            [  5.76,   9.61,  12.25]]), 
+                          '04err4': matrix([[ 0.,  0.,  0.],
+                                            [ 0.,  0.,  0.],
+                                            [ 0.,  0.,  0.]]) }
+        self.__compareKeys( redcov, expectedredcov )
+        for key in redcov.keys():
+            for cov, expectedcov in zip( redcov[key].flat,
+                                         expectedredcov[key].flat ):
+                self.assertAlmostEqual( cov, expectedcov )
+        return
+
+    def test_getTotalReducedCovariance( self ):
+        totalredcov= self.__parser.getTotalReducedCovariance()
+        expectedtotalredcov= matrix( [ [ 7.06, 6.97, 6.97  ],
+                                       [ 6.97, 11.4089, 11.3 ],
+                                       [ 6.97, 11.3, 14.66  ] ] )
+        for cov, expectedcov in zip( totalredcov.flat,
+                                     expectedtotalredcov.flat ):
+            self.assertAlmostEqual( cov, expectedcov )
+        return
+
+
     def test_stripLeadingDigits( self ):
         word= "01abc1"
         expectedword= "abc1"
@@ -112,9 +193,9 @@ class AverageDataParserTest( unittest.TestCase ):
 Correlations:\n\
 \n\
 stat:\n\
-1.00 0.00 0.00\n\
-0.00 1.00 0.00\n\
-0.00 0.00 1.00\n\
+ 1.000  0.000  0.000\n\
+ 0.000  1.000  0.000\n\
+ 0.000  0.000  1.000\n\
 \n\
 err1:\n\
 p p p\n\
@@ -129,7 +210,28 @@ f f f\n"
         return
 
 
+class AverageDataParserGroupTest( unittest.TestCase ):
+
+    def setUp( self ):
+        self.__parser= AverageDataParser( "valassi1.txt" )
+        return
+
+    def test_grouplist( self ):
+        grouplist= self.__parser.getGroups()
+        expectedgrouplist= [ 'a', 'a', 'b', 'b' ]
+        self.assertEqual( grouplist, expectedgrouplist )
+        return
+
+    def test_groupmatrix( self ):
+        groupmatrix= self.__parser.getGroupMatrix()
+        expectedgroupmatrix= [ [ 1, 0 ], [ 1, 0 ], [ 0, 1 ], [ 0, 1 ] ]
+        self.assertEqual( groupmatrix, expectedgroupmatrix )
+        return
+
+
 if __name__ == '__main__':
-    suite= unittest.TestLoader().loadTestsFromTestCase( AverageDataParserTest )
-    unittest.TextTestRunner( verbosity=2 ).run( suite )
+    suite1= unittest.TestLoader().loadTestsFromTestCase( AverageDataParserTest )
+    suite2= unittest.TestLoader().loadTestsFromTestCase( AverageDataParserGroupTest )
+    unittest.TextTestRunner( verbosity=2 ).run( suite1 )
+    unittest.TextTestRunner( verbosity=2 ).run( suite2 )
 
