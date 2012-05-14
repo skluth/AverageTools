@@ -256,7 +256,7 @@ class AverageDataParser:
                     for j in range(n):
                         ii= i*n+j
                         if "c" in covopt:
-                            print "{0:4.2f}".format( correlations[ii] ),
+                            print "{0:6.3f}".format( correlations[ii] ),
                         else:
                             print correlations[ii],
                     print
