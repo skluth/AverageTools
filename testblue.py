@@ -85,7 +85,186 @@ class blueTest( unittest.TestCase ):
 
 
 
+class blueValassiTest( unittest.TestCase ):
+
+    def __getprintResults( self, bluesolver ):
+        import StringIO, sys
+        output= StringIO.StringIO()
+        sys.stdout= output
+        bluesolver.printResults()
+        sys.stdout= sys.__stdout__
+        return output.getvalue()
+
+    def test_valassi1( self ):
+        bluesolver= blue.blue( "valassi1.txt" )
+        printout= self.__getprintResults( bluesolver )
+        expectedprintout= "\n Results:\n\
+\n\
+ Chi^2= 2.02 for 2 d.o.f, chi^2/d.o.f= 1.01, P(chi^2)= 0.3633\n\
+\n\
+ Variables:        BeA        BeB      BtauA      BtauB\n\
+   Weights:     0.9000     0.1000     0.0000     0.0000\n\
+                0.0000     0.0000     0.5000     0.5000\n\
+     Pulls:    -0.3000     0.9000    -0.7500     0.7500\n\
+\n\
+   Average:    10.8000    11.7500\n\
+      stat:     0.9487     2.1213\n\
+      syst:     0.0000     0.0000\n\
+     total:     0.9487     2.1213\n\
+\n\
+ Total correlations:\n\
+  1.000   0.000\n\
+  0.000   1.000\n\
+\n"
+        self.assertEqual( printout, expectedprintout )
+        return
+
+    def test_valassi2( self ):
+        bluesolver= blue.blue( "valassi2.txt" )
+        printout= self.__getprintResults( bluesolver )
+        expectedprintout= "\n Results:\n\
+\n\
+ Chi^2= 2.11 for 2 d.o.f, chi^2/d.o.f= 1.06, P(chi^2)= 0.3475\n\
+\n\
+ Variables:        BeA        BeB      BtauA      BtauB\n\
+   Weights:     0.9396     0.0604     0.0000     0.0000\n\
+                0.0000     0.0000     0.5000     0.5000\n\
+     Pulls:    -0.1813     0.9396    -0.7500     0.7500\n\
+\n\
+   Average:    10.6813    11.7500\n\
+      stat:     0.9832     2.1213\n\
+      syst:     0.0000     0.0000\n\
+     total:     0.9832     2.1213\n\
+\n\
+ Total correlations:\n\
+  1.000   0.000\n\
+  0.000   1.000\n\
+\n"
+        self.assertEqual( printout, expectedprintout )
+        return
+
+    def test_valassi3( self ):
+        bluesolver= blue.blue( "valassi3.txt" )
+        printout= self.__getprintResults( bluesolver )
+        expectedprintout= "\n Results:\n\
+\n\
+ Chi^2= 1.23 for 2 d.o.f, chi^2/d.o.f= 0.61, P(chi^2)= 0.5408\n\
+\n\
+ Variables:        BeA        BeB      BtauA      BtauB\n\
+   Weights:     0.8197     0.1803     0.0897    -0.0897\n\
+                0.8075    -0.8075     0.0983     0.9017\n\
+     Pulls:    -0.1373     0.9542    -0.5451     0.9549\n\
+\n\
+   Average:    10.6373    11.1353\n\
+      stat:     0.9053     0.9404\n\
+      syst:     0.0000     0.0000\n\
+     total:     0.9053     0.9404\n\
+\n\
+ Total correlations:\n\
+  1.000   0.948\n\
+  0.948   1.000\n\
+\n"
+        self.assertEqual( printout, expectedprintout )
+        return
+
+    def test_valassi4( self ):
+        bluesolver= blue.blue( "valassi4.txt" )
+        printout= self.__getprintResults( bluesolver )
+        expectedprintout= "\n Results:\n\
+\n\
+ Chi^2= 6.07 for 2 d.o.f, chi^2/d.o.f= 3.04, P(chi^2)= 0.0480\n\
+\n\
+ Variables:        BeA        BeB      BtauA      BtauB\n\
+   Weights:     0.8197     0.1803    -0.0897     0.0897\n\
+               -0.8075     0.8075     0.0983     0.9017\n\
+     Pulls:    -0.9448     0.6851    -2.1601    -0.6601\n\
+\n\
+   Average:    11.4448    15.9803\n\
+      stat:     0.9053     0.9404\n\
+      syst:     0.0000     0.0000\n\
+     total:     0.9053     0.9404\n\
+\n\
+ Total correlations:\n\
+  1.000  -0.948\n\
+ -0.948   1.000\n\
+\n"
+        self.assertEqual( printout, expectedprintout )
+        return
+
+    def test_valassi5( self ):
+        bluesolver= blue.blue( "valassi5.txt" )
+        printout= self.__getprintResults( bluesolver )
+        expectedprintout= "\n Results:\n\
+\n\
+ Chi^2= 1.23 for 2 d.o.f, chi^2/d.o.f= 0.62, P(chi^2)= 0.5404\n\
+\n\
+ Variables:        BeA        BeB      BtauA      BtauB\n\
+   Weights:     0.8195     0.1805     0.0897    -0.0897\n\
+                0.8076    -0.8076     0.0981     0.9019\n\
+     Pulls:    -0.1377     0.9549    -0.5453     0.9556\n\
+\n\
+   Average:    10.6377    11.1358\n\
+      stat:     0.8636     0.8963\n\
+       exp:     0.2714     0.2820\n\
+      syst:     0.2714     0.2820\n\
+     total:     0.9053     0.9397\n\
+\n\
+ Total correlations:\n\
+  1.000   0.949\n\
+  0.949   1.000\n\
+\n"
+        self.assertEqual( printout, expectedprintout )
+        return
+
+    def test_valassi6( self ):
+        bluesolver= blue.blue( "valassi6.txt" )
+        printout= self.__getprintResults( bluesolver )
+        expectedprintout= "\n Results:\n\
+\n\
+ Chi^2= 6.08 for 2 d.o.f, chi^2/d.o.f= 3.04, P(chi^2)= 0.0479\n\
+\n\
+ Variables:        BeA        BeB      BtauA      BtauB\n\
+   Weights:     0.8195     0.1805    -0.0897     0.0897\n\
+               -0.8076     0.8076     0.0981     0.9019\n\
+     Pulls:    -0.9453     0.6855    -2.1604    -0.6610\n\
+\n\
+   Average:    11.4453    15.9812\n\
+      stat:     0.8636     0.8963\n\
+       exp:     0.2714     0.2820\n\
+      syst:     0.2714     0.2820\n\
+     total:     0.9053     0.9397\n\
+\n\
+ Total correlations:\n\
+  1.000  -0.949\n\
+ -0.949   1.000\n\
+\n"
+        self.assertEqual( printout, expectedprintout )
+        return
+
+    def test_valassi7( self ):
+        bluesolver= blue.blue( "valassi7.txt" )
+        printout= self.__getprintResults( bluesolver )
+        expectedprintout= "\n Results:\n\
+\n\
+ Chi^2= 2.20 for 3 d.o.f, chi^2/d.o.f= 0.73, P(chi^2)= 0.5329\n\
+\n\
+ Variables:        BeA        BeB      BtauA      BtauB\n\
+   Weights:     0.7498     0.0835     0.0833     0.0835\n\
+     Pulls:    -0.4592     0.8477    -0.4864     1.0145\n\
+\n\
+   Average:    10.9592\n\
+      stat:     0.7907\n\
+       exp:     0.3529\n\
+      syst:     0.3529\n\
+     total:     0.8659\n\
+\n"
+        self.assertEqual( printout, expectedprintout )
+        return
+
+
 if __name__ == '__main__':
-    suite= unittest.TestLoader().loadTestsFromTestCase( blueTest )
-    unittest.TextTestRunner( verbosity=2 ).run( suite )
+    suite1= unittest.TestLoader().loadTestsFromTestCase( blueTest )
+    suite2= unittest.TestLoader().loadTestsFromTestCase( blueValassiTest )
+    unittest.TextTestRunner( verbosity=2 ).run( suite1 )
+    unittest.TextTestRunner( verbosity=2 ).run( suite2 )
 
