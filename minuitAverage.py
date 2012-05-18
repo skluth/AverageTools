@@ -23,6 +23,7 @@ class minuitAverage( clsqAverage ):
                        upnames, mpnames, extraparnames ):
 
         dataparser= self._getDataparser()
+        covoptions= dataparser.getCovoption()
         covm= dataparser.getTotalReducedCovariance()
         invm= covm.getI()
         ndata= len( data )
@@ -43,11 +44,17 @@ class minuitAverage( clsqAverage ):
             umpar= gm*uparv
             for ival in range( ndata ):
                 for ierr in parindexmaps.keys():
+                    covopt= covoptions[errorkeys[ierr]]
                     indexmap= parindexmaps[ierr]
                     if ival in indexmap.keys():
                         parindex= indexmap[ival] + npar
                         term= par[parindex]*systerrormatrix[ierr][ival]
-                        umpar[ival]+= term
+                        if "r" in covopt:
+                            umpar[ival]*= 1.0+term/self.__data[ival]
+                        else:
+                            # minus sign for consistency with clsq?
+                            # umpar[ival]+= term
+                            umpar[ival]-= term
             delta= self.__data - umpar
             chisq= delta.getT()*invm*delta
             for ipar in range( npar, npar+nextrapar ):
