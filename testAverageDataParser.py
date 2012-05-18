@@ -41,7 +41,8 @@ class AverageDataParserTest( unittest.TestCase ):
                           '02err2': [ 0.9, 1.5, 1.9 ], 
                           '03err3': [ 2.4, 3.1, 3.5 ], 
                           '04err4': [ 1.4, 2.9, 3.3 ] }
-        self.__compareKeys( errors, expectederrors )
+        self.assertEqual( sorted( errors.keys() ), 
+                          sorted( expectederrors.keys() ) )
         for key in errors.keys():
             self.assertEqual( errors[key], expectederrors[key] )
         return
@@ -61,7 +62,8 @@ class AverageDataParserTest( unittest.TestCase ):
                            '02err2': 'm', 
                            '03err3': 'p',
                            '04err4': 'f' }
-        self.__compareKeys( covopts, expectedcovopts )
+        self.assertEqual( sorted( covopts.keys() ), 
+                          sorted( expectedcovopts.keys() ) )
         values= covopts.values()
         expectedvalues= expectedcovopts.values()
         self.assertEqual( sorted(values), sorted(expectedvalues) )
@@ -72,15 +74,10 @@ class AverageDataParserTest( unittest.TestCase ):
         expectedcorrs= { '00stat': [ 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0 ], 
                          '01err1': [ 'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p' ], 
                          '02err2': [ 'f', 'f', 'f', 'f', 'f', 'f', 'f', 'f', 'f' ] }
-        self.__compareKeys( correlations, expectedcorrs )
+        self.assertEqual( sorted( correlations.keys() ), 
+                          sorted( expectedcorrs.keys() ) )
         for key in correlations.keys():
             self.assertEqual( correlations[key], expectedcorrs[key] )
-        return
-
-    def __compareKeys( self, dict1, dict2 ):
-        keys1= dict1.keys()
-        keys2= dict2.keys()
-        self.assertEqual( sorted(keys1), sorted(keys2) )
         return
 
     def test_getCovariances( self ):
@@ -100,7 +97,8 @@ class AverageDataParserTest( unittest.TestCase ):
                                '04err4': matrix( [ [ 1.96, 4.06, 4.62 ],
                                                    [ 4.06, 8.41, 9.57 ],
                                                    [ 4.62, 9.57, 10.89 ] ] ) }
-        self.__compareKeys( covariances, expectedCovariances )
+        self.assertEqual( sorted( covariances.keys() ), 
+                          sorted( expectedCovariances.keys() ) )
         for key in covariances.keys():
             for cov, expectedcov in zip( covariances[key].flat,
                                          expectedCovariances[key].flat ):
@@ -121,7 +119,8 @@ class AverageDataParserTest( unittest.TestCase ):
         systerrmatrix= self.__parser.getSysterrorMatrix()
         expectedsysterrmatrix= { 2: [ 0.9, 1.5, 1.9 ], 
                                  4: [ 1.4, 2.9, 3.3 ] }
-        self.__compareKeys( systerrmatrix, expectedsysterrmatrix )
+        self.assertEqual( sorted( systerrmatrix.keys() ), 
+                          sorted( expectedsysterrmatrix.keys() ) )
         for key in systerrmatrix.keys():
             for systerr, expectedsysterr in zip( systerrmatrix[key], 
                                                  expectedsysterrmatrix[key] ):
@@ -145,7 +144,8 @@ class AverageDataParserTest( unittest.TestCase ):
                           '04err4': matrix([[ 0.,  0.,  0.],
                                             [ 0.,  0.,  0.],
                                             [ 0.,  0.,  0.]]) }
-        self.__compareKeys( redcov, expectedredcov )
+        self.assertEqual( sorted( redcov.keys() ), 
+                          sorted( expectedredcov.keys() ) )
         for key in redcov.keys():
             for cov, expectedcov in zip( redcov[key].flat,
                                          expectedredcov[key].flat ):
@@ -161,7 +161,6 @@ class AverageDataParserTest( unittest.TestCase ):
                                      expectedtotalredcov.flat ):
             self.assertAlmostEqual( cov, expectedcov )
         return
-
 
     def test_stripLeadingDigits( self ):
         word= "01abc1"
@@ -229,9 +228,67 @@ class AverageDataParserGroupTest( unittest.TestCase ):
         return
 
 
+class AverageDataParserOptionsTest( unittest.TestCase ):
+
+    def setUp( self ):
+        self.__parser= AverageDataParser( "testOptions.txt" )
+        return
+
+    def test_Errors( self ):
+        errors= self.__parser.getErrors()
+        expectederrors= { '00stat': [ 0.343, 0.38082, 0.5235 ], 
+                          '01erra': [ 1.8865, 2.2503, 2.6175 ], 
+                          '02errb': [ 0.9, 1.5, 1.9 ], 
+                          '03errc': [ 2.4, 3.1, 3.5 ] }
+        self.assertEqual( sorted( errors.keys() ), 
+                          sorted( expectederrors.keys() ) )
+        for key in errors.keys():
+            for error, expectederror in zip( errors[key], 
+                                             expectederrors[key] ):
+                self.assertAlmostEqual( error, expectederror )
+        return
+
+    def test_Covariances( self ):
+        covariances= self.__parser.getCovariances()
+        expectedCovariances= { '00stat': matrix( [ [ 0.117649, 0.0, 0.0 ],
+                                                   [ 0.0, 0.14502387, 0.0 ],
+                                                   [ 0.0,  0.0,  0.27405225] ] ), 
+                               '01erra': matrix( [ [ 3.55888225, 3.55888225, 3.55888225 ],
+                                                   [ 3.55888225,  5.06385009,  3.55888225],
+                                                   [ 3.55888225,  3.55888225,  6.85130625]]), 
+                               '02errb': matrix([[ 0.81,  0.81,  0.81],
+                                                 [ 0.81,  2.25,  0.81],
+                                                 [ 0.81,  0.81,  3.61]]), 
+                               '03errc': matrix([[ 5.76, 5.81373761, 5.86075802],
+                                                 [ 5.81373761, 9.61, 5.91543564],
+                                                 [ 5.86075802, 5.91543564, 12.25]] ) }       
+        self.assertEqual( sorted( covariances.keys() ), 
+                          sorted( expectedCovariances.keys() ) )
+        for key in covariances.keys():
+            for cov, expectedcov in zip( covariances[key].flat, 
+                                         expectedCovariances[key].flat ):
+                self.assertAlmostEqual( cov, expectedcov )
+        return
+
+    def test_Systerrormatrix( self ):
+        systerrmatrix= self.__parser.getSysterrorMatrix()
+        expectedsysterrmatrix= { 1: [ 1.8865, 1.8865, 1.8865 ], 
+                                 2: [ 0.9, 0.9, 0.9 ], 
+                                 3: [ 2.4, 2.42239067, 2.4419825 ] }
+        self.assertEqual( sorted( systerrmatrix.keys() ), 
+                          sorted( expectedsysterrmatrix.keys() ) )
+        for key in systerrmatrix.keys():
+            for systerr, expectedsysterr in zip( systerrmatrix[key], 
+                                                 expectedsysterrmatrix[key] ):
+                self.assertAlmostEqual( systerr, expectedsysterr ) 
+        return
+
+
 if __name__ == '__main__':
     suite1= unittest.TestLoader().loadTestsFromTestCase( AverageDataParserTest )
     suite2= unittest.TestLoader().loadTestsFromTestCase( AverageDataParserGroupTest )
-    unittest.TextTestRunner( verbosity=2 ).run( suite1 )
-    unittest.TextTestRunner( verbosity=2 ).run( suite2 )
+    suite3= unittest.TestLoader().loadTestsFromTestCase( AverageDataParserOptionsTest )
+    for suite in [ suite1, suite2, suite3 ]:
+        unittest.TextTestRunner( verbosity=2 ).run( suite )
+
 
