@@ -52,8 +52,6 @@ class minuitAverage( clsqAverage ):
                         if "r" in covopt:
                             umpar[ival]*= 1.0+term/self.__data[ival]
                         else:
-                            # minus sign for consistency with clsq?
-                            # umpar[ival]+= term
                             umpar[ival]-= term
             delta= self.__data - umpar
             chisq= delta.getT()*invm*delta
