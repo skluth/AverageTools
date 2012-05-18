@@ -112,7 +112,6 @@ class AverageDataParser:
                 cov= 0.0
         return cov
     def __makeCovariances( self ):
-
         hcov= {}
         hredcov= {}
         systerrormatrix= {}
@@ -158,7 +157,7 @@ class AverageDataParser:
                             redcovelement= 0.0
                         lcov.append( covelement )
                         lredcov.append( redcovelement )
-                        systerrlist.append( minerr )
+                    systerrlist.append( minerr )
                 systerrormatrix[nerr]= systerrlist
             # Direct calculation from "f", "p" or "u":
             elif( "f" in covoption or "p" in covoption or
