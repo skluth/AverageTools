@@ -1,5 +1,10 @@
 
-# Python wrapper around TMinuit
+# Python wrapper around TMinuit.
+# Behaviour of minuitSolver follows clsqSolver (clsq.py), but there is
+# currently no common base class or other inheritance relation.  Both
+# solver classes are used interchangeably by clsqAverage and minuitAverage.
+# This works with python duck-typing, but needs a common base class in
+# more strict languages
 # 5/2012 S Kluth
 
 
