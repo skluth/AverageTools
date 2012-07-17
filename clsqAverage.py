@@ -287,7 +287,8 @@ class clsqAverage:
                         if "r" in covopt:
                             # linearised exponential a la Blobel for 
                             # multiplicative rel. error
-                            constraint*= ( 1.0 + term/originaldata[ival] )
+                            # constraint*= ( 1.0 + term/originaldata[ival] )
+                            constraint/= ( 1.0 + term/originaldata[ival] )
                         else:
                             # Additive error:
                             constraint+= term

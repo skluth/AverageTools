@@ -50,7 +50,8 @@ class minuitAverage( clsqAverage ):
                         parindex= indexmap[ival] + npar
                         term= par[parindex]*systerrormatrix[ierr][ival]
                         if "r" in covopt:
-                            umpar[ival]*= 1.0+term/self.__data[ival]
+                            # umpar[ival]*= 1.0+term/self.__data[ival]
+                            umpar[ival]/= ( 1.0 + term/self.__data[ival] )
                         else:
                             umpar[ival]-= term
             delta= self.__data - umpar
