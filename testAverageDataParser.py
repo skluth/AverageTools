@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # unit tests for AverageDataParser
 # S. Kluth 12/2011

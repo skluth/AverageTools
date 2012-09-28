@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # unit tests for constrained least squares averages
 # S. Kluth 01/2012
