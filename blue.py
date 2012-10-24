@@ -4,6 +4,8 @@
 # S. Kluth 12/2011
 # AverageDataParser reads input files
 
+# stefans test
+
 import numpy
 from AverageDataParser import AverageDataParser, stripLeadingDigits
 from math import sqrt
