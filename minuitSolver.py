@@ -14,32 +14,38 @@ from math import sqrt
 
 
 class MinuitError( Exception ):
-     def __init__( self, value ):
+    def __init__( self, value ):
          self.__value= value
-     def __str__( self ):
+    def __str__( self ):
          return repr( self.__value )
-
-
+          
+          
 class minuitSolver():
 
     def __init__( self, fcn, pars, parerrors, parnames, ndof, maxpars=50 ):
-
+          
         if len( pars ) > maxpars:
-            raise MinuitError( "More than 50 parameters, increase maxpars" )
+             raise MinuitError( "More than 50 parameters, increase maxpars" )
         self.__minuit= TMinuit( maxpars )
         self.minuitCommand( "SET PRI -1" )
         self.__minuit.SetFCN( fcn )
-        for par, parerror, parname, i in zip( pars, parerrors, parnames, 
-                                              range( len( pars ) ) ):
-            ierflg= self.__minuit.DefineParameter( i, parname, par, parerror, 
-                                                   0.0, 0.0 )
-            if ierflg != 0:
-                message= "Minuit define parameter error: " + str( ierflg )
-                raise MinuitError( message )
         self.__pars= pars
         self.__parerrors= parerrors
         self.__parnames= parnames
+        self.__setParameters()
         self.__ndof= ndof
+        return
+   
+    def __setParameters( self ):
+        for par, parerror, parname, i in zip( self.__pars,
+                                              self.__parerrors,
+                                              self.__parnames, 
+                                              range( len( self.__pars ) ) ):
+             ierflg= self.__minuit.DefineParameter( i, parname, par, parerror, 
+                                                    0.0, 0.0 )
+        if ierflg != 0:
+             message= "Minuit define parameter error: " + str( ierflg )
+             raise MinuitError( message )
         return
 
     def minuitCommand( self, command ):
@@ -50,6 +56,7 @@ class minuitSolver():
         return
 
     def solve( self, lBlobel=True ):
+        self.__setParameters()
         self.minuitCommand( "MIGRAD" )
         return
 
@@ -99,7 +106,7 @@ class minuitSolver():
         for i in range(mshape[0]):
             print "{0:>10s}".format( self.__parnames[i] ),
             for j in range(mshape[1]):
-                fmtstr="{0:10"+ffmt+"}"
+                fmtstr= "{0:10"+ffmt+"}"
                 print fmtstr.format( m[i,j] ),
             print
         return
