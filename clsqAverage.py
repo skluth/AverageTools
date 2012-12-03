@@ -137,14 +137,12 @@ class clsqAverage:
                         ndata, ncorrsyst, errorkey, parindxmaps, ierr ):
         extrapars.append( 0.0 )
         extraparerrors.append( 1.0 )
-        # parnames[ndata+ncorrsyst]= stripLeadingDigits( errorkey )
         parnames.append( stripLeadingDigits( errorkey ) )
         indxmap= {}
         for ival in range( ndata ):
             indxmap[ival]= ncorrsyst
         parindxmaps[ierr]= indxmap
         return
-
 
     # Setup extra unmeasured parameters for correlated systematics:
     def __createExtraPars( self ):
@@ -219,14 +217,14 @@ class clsqAverage:
     # Prepare inputs and initialise the solver:
     def __setupSolver( self ):
 
-        # Initialise (unmeasured) fit parameter(s) with straight average(s) 
+        # Initialise (unmeasured) fit parameter(s) with straight average(s):
         data= self.__data
         ndata= len( data )
         datav= matrix( data )
         datav.shape= (ndata,1)
         groupmatrix= self.__dataparser.getGroupMatrix()
         gm= matrix( groupmatrix )
-        uparv= gm.getT()*datav/float(gm.shape[1])
+        uparv= gm.getT()*datav/(float(gm.shape[0])/float(gm.shape[1]))
         upar= [ par for par in uparv.flat ]
 
         # Set the name(s) of the unmeasured (average) fit parameters:
