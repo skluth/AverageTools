@@ -159,7 +159,7 @@ class AverageDataParser:
                         lredcov.append( redcovelement )
                     systerrlist.append( minerr )
                 systerrormatrix[nerr]= systerrlist
-            # Direct calculation from "f", "p" or "u":
+            # Direct calculation from "f", "p", "u" or "a":
             elif( "f" in covoption or "p" in covoption or
                   "u" in covoption or "a" in covoption ):
                 lcov= [ self.__calcCovariance( covoption, 
@@ -178,8 +178,15 @@ class AverageDataParser:
                 err1err2= [ err1*err2 for err1 in errors for err2 in errors ]
                 lcov= [ corr*errprod 
                         for corr, errprod in zip( corrlist, err1err2 ) ]
+                # "Onionisation"
+                if "o" in covoption:
+                    for iderr1 in range( nerrors ):
+                        for iderr2 in range( nerrors ):
+                            ierr= iderr1*nerrors+iderr2
+                            lcov[ierr]= min( lcov[ierr],
+                                             min( errors[iderr1], errors[iderr2] )**2 )
                 lredcov= lcov
-            # Covariances from options:
+           # Covariances from options:
             elif "m" in covoption:
                 mcovopts= self.__correlations[errorkey]
                 err1err2= [ (errors[iderr1],errors[iderr2],iderr1,iderr2) 
