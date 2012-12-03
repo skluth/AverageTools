@@ -178,7 +178,7 @@ class AverageDataParser:
                 err1err2= [ err1*err2 for err1 in errors for err2 in errors ]
                 lcov= [ corr*errprod 
                         for corr, errprod in zip( corrlist, err1err2 ) ]
-                # "Onionisation"
+                # "Onionisation":
                 if "o" in covoption:
                     for iderr1 in range( nerrors ):
                         for iderr2 in range( nerrors ):
