@@ -186,7 +186,7 @@ class AverageDataParser:
                             lcov[ierr]= min( lcov[ierr],
                                              min( errors[iderr1], errors[iderr2] )**2 )
                 lredcov= lcov
-           # Covariances from options:
+            # Covariances from options:
             elif "m" in covoption:
                 mcovopts= self.__correlations[errorkey]
                 err1err2= [ (errors[iderr1],errors[iderr2],iderr1,iderr2) 
