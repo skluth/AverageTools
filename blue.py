@@ -11,7 +11,7 @@ from AverageDataParser import AverageDataParser, stripLeadingDigits
 from math import sqrt
 from ROOT import TMath
 
-class blue:
+class Blue:
 
     # C-tor, setup parser, covariances and weights:
     def __init__( self, filename ):
@@ -92,7 +92,7 @@ class blue:
         return
 
     # Print results:
-    def printResults( self ):
+    def printResults( self, optinfo=False ):
         print "\n Results:"
         chisq= float( self.calcChisq() )
         wm= self.calcWeightsMatrix()
@@ -110,9 +110,25 @@ class blue:
         for iavg in range( navg ):
             if iavg > 0:
                 print "           ",
+            sumw= 0.0
             for ivar in range( nvar ):
+                sumw+= wm[iavg,ivar]
                 print "{0:10.4f}".format( wm[iavg,ivar] ),
-            print
+            print "{0:10.4f}".format( sumw )
+
+        herrs= self.errorAnalysis()
+        if optinfo:
+            print "  DeltaI/I:",
+            for iavg in range( navg ):
+                if iavg > 0:
+                    print "           ",
+                deltaIsum= 0.0
+                for ivar in range( nvar ):
+                    deltaI= herrs["total"][iavg,iavg]/self.totalerrors[ivar,0]**2
+                    deltaIsum+= deltaI
+                    print "{0:10.4f}".format( deltaI ),
+                print "{0:10.4f}".format( 1.0-deltaIsum )
+
         print "     Pulls:", 
         pulls= self.calcPulls()
         for ivar in range( nvar ):
@@ -123,15 +139,20 @@ class blue:
         for iavg in range( navg ):
             print "{0:10.4f}".format( avg[iavg,0] ),
         print
-        herrs= self.errorAnalysis()
         errorlist= self.errors.keys()
         errorlist.sort()
+        if optinfo and navg == 1:
+            print "            +/- errors   dI/df offd. sums"
+            hinfos, hinfosums= self.informationAnalysis()
         for errorkey in errorlist + [ "syst", "total" ]:
             print "{0:>10s}:".format( stripLeadingDigits( errorkey ) ),
             for iavg in range( navg ):
                 error= herrs[errorkey][iavg,iavg]
                 error= sqrt( error )
                 print "{0:10.4f}".format( error ),
+                if navg == 1 and optinfo and not ( "syst" in errorkey or
+                                                   "total" in errorkey ):
+                    print "{0:9.3f}".format( hinfosums[errorkey] ),
             print
         if navg > 1:
             print "\n Total correlations:"
@@ -141,7 +162,18 @@ class blue:
                     corr= cov[i,j]/sqrt(cov[i,i]*cov[j,j])
                     print "{0:7.3f}".format( corr ),
                 print
-        print
+            print
+        elif optinfo:
+            print "\n dI/df offdiagonal sums over error sources:"
+            totalinfom= hinfos["total"]
+            for i in range( nvar ):
+                for j in range( nvar ):
+                    if j > i:
+                        print "{0:7.3f}".format( totalinfom[i,j] ),
+                    else:
+                        print "       ",
+                print
+            print
         return
 
     # Error analysis from weights and input covariance matrices:
@@ -176,7 +208,36 @@ class blue:
         herrs["systcov"]= covv
         return herrs
         
-
+    def informationAnalysis( self ):
+        hcov= self.hcov
+        wm= self.calcWeightsMatrix()
+        wml= [ w for w in wm.flat ]
+        wmtranspose= wm.getT()
+        ndata= len( self.data )
+        summ= self.__makeZeroMatrix( ndata )
+        for key in hcov.keys():
+            summ+= hcov[key]
+        Information= wm*summ*wmtranspose
+        Information= 1.0/Information
+        hinfos= {}
+        hinfosums= {}
+        totalinfom= self.__makeZeroMatrix( ndata )
+        for key in hcov.keys():
+            infom= self.__makeZeroMatrix( ndata )
+            covv= hcov[key]
+            infosum= 0.0
+            for i in range( ndata ):
+                for j in range( ndata ):
+                    info= -2.0*Information*wml[i]*wml[j]*covv[i,j]
+                    infom[i,j]= info
+                    if j > i:
+                        infosum+= info
+            totalinfom+= infom
+            hinfos[key]= infom
+            hinfosums[key]= float( infosum )
+        hinfos["total"]= totalinfom
+        return hinfos, hinfosums
+    
 
     # Scan correlations between p and f:
     def scanCorr( self, step ):
