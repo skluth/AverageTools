@@ -7,13 +7,13 @@
 import unittest
 from math import sqrt
 
-import blue
+from blue import Blue
 
 
 class blueTest( unittest.TestCase ):
 
     def setUp( self ):
-        self.__blue= blue.blue( "test.txt" )
+        self.__blue= Blue( "test.txt" )
         return
 
     def test_calcAverage( self ):
@@ -38,7 +38,7 @@ class blueTest( unittest.TestCase ):
         return
 
     def test_errorAnalysis( self ):
-        herrors= self.__blue.errorAnalysis()
+        herrors, wm= self.__blue.errorAnalysis()
         keys= herrors.keys()
         expectedherrors= { '00stat': 0.4114006127938109, 
                            '01err1': 1.132605331048375, 
@@ -96,7 +96,7 @@ class blueValassiTest( unittest.TestCase ):
         return output.getvalue()
 
     def test_valassi1( self ):
-        bluesolver= blue.blue( "valassi1.txt" )
+        bluesolver= Blue( "valassi1.txt" )
         printout= self.__getprintResults( bluesolver )
         expectedprintout= "\n Results:\n\
 \n\
@@ -120,7 +120,7 @@ class blueValassiTest( unittest.TestCase ):
         return
 
     def test_valassi2( self ):
-        bluesolver= blue.blue( "valassi2.txt" )
+        bluesolver= Blue( "valassi2.txt" )
         printout= self.__getprintResults( bluesolver )
         expectedprintout= "\n Results:\n\
 \n\
@@ -144,7 +144,7 @@ class blueValassiTest( unittest.TestCase ):
         return
 
     def test_valassi3( self ):
-        bluesolver= blue.blue( "valassi3.txt" )
+        bluesolver= Blue( "valassi3.txt" )
         printout= self.__getprintResults( bluesolver )
         expectedprintout= "\n Results:\n\
 \n\
@@ -168,7 +168,7 @@ class blueValassiTest( unittest.TestCase ):
         return
 
     def test_valassi4( self ):
-        bluesolver= blue.blue( "valassi4.txt" )
+        bluesolver= Blue( "valassi4.txt" )
         printout= self.__getprintResults( bluesolver )
         expectedprintout= "\n Results:\n\
 \n\
@@ -192,7 +192,7 @@ class blueValassiTest( unittest.TestCase ):
         return
 
     def test_valassi5( self ):
-        bluesolver= blue.blue( "valassi5.txt" )
+        bluesolver= Blue( "valassi5.txt" )
         printout= self.__getprintResults( bluesolver )
         expectedprintout= "\n Results:\n\
 \n\
@@ -217,7 +217,7 @@ class blueValassiTest( unittest.TestCase ):
         return
 
     def test_valassi6( self ):
-        bluesolver= blue.blue( "valassi6.txt" )
+        bluesolver= Blue( "valassi6.txt" )
         printout= self.__getprintResults( bluesolver )
         expectedprintout= "\n Results:\n\
 \n\
@@ -242,7 +242,7 @@ class blueValassiTest( unittest.TestCase ):
         return
 
     def test_valassi7( self ):
-        bluesolver= blue.blue( "valassi7.txt" )
+        bluesolver= Blue( "valassi7.txt" )
         printout= self.__getprintResults( bluesolver )
         expectedprintout= "\n Results:\n\
 \n\
