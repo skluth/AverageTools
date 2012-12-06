@@ -96,6 +96,7 @@ class Blue( Average ):
         for iavg in range( navg ):
             print "{0:10.4f}".format( avg[iavg,0] ),
         print
+        print
         return
   
 
