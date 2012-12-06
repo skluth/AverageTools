@@ -4,15 +4,16 @@
 # 5/2012 S Kluth
 
 
-from clsqAverage import clsqAverage
+
+from clsqAverage import FitAverage
 from minuitSolver import minuitSolver
 from numpy import matrix
 
 
-class minuitAverage( clsqAverage ):
+class minuitAverage( FitAverage ):
 
     def __init__( self, filename ):
-        clsqAverage.__init__( self, filename )
+        FitAverage.__init__( self, filename )
         return
 
     # Used by base class to create the least squares solver
@@ -69,18 +70,11 @@ class minuitAverage( clsqAverage ):
         solver= minuitSolver( fcn, pars, parerrors, parnames, ndof )
         return solver
 
-    # Print inputs from dataparser:
-    def printInputs( self ):
-        dataparser= self._getDataparser()
-        dataparser.printInputs()
-        return
-
     # Needed for calculation of weights by derivatives of
     # solution w.r.t. inputs in base class
     def _getSolverData( self ):
         return self.__data
     def _getAverage( self ):
-        solver= self.getSolver()
-        uparv= solver.getUparv()
+        uparv= FitAverage._getAverage( self )
         return uparv[:self.__npar]
 
