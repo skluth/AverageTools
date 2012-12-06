@@ -5,22 +5,22 @@
 
 import unittest
 
-import clsqAverage
+from clsqAverage import clsqAverage
 
 
 class clsqAverageTest( unittest.TestCase ):
 
     def setUp( self ):
-        self.__ca= clsqAverage.clsqAverage( "test.txt" )
-        self.__ca.calcAverage()
+        self.__ca= clsqAverage( "test.txt" )
+        self.__ca.runSolver()
         return
 
-    def test_getAverage( self ):
-        val, error= self.__ca.getAverage()
+    def test_getAveragesAndErrors( self ):
+        val, error= self.__ca.getAveragesAndErrors()
         expectedval= 170.709196921
         expectederror= 2.9668615985
-        self.assertAlmostEqual( val, expectedval )
-        self.assertAlmostEqual( error, expectederror )
+        self.assertAlmostEqual( val[0], expectedval )
+        self.assertAlmostEqual( error[0], expectederror )
         return
 
     def test_mpars( self ):
