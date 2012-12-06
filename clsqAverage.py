@@ -4,54 +4,20 @@ from ConstrainedFit import clsq
 from math import sqrt, exp
 from numpy import matrix, zeros
 
-class clsqAverage:
+
+class Average:
 
     # C-tor, setup parser, covariances and weights:
     def __init__( self, filename ):
         self.__dataparser= AverageDataParser( filename )
-        self.__data= self.__dataparser.getValues()
-        self.__solver= self.__setupSolver()
         return
 
     def printInputs( self ):
         self.__dataparser.printInputs()
-        print "\nConstraints before solution:"
-        print self.__solver.getConstraints()
-        return
-
-    def calcAverage( self, lBlobel=False ):
-        self.__lBlobel= lBlobel
-        self.__solver.solve( lBlobel=lBlobel )
         return
 
     def _getDataparser( self ):
         return self.__dataparser
-
-    def _getSolverData( self ):
-        return self.__solver.getData()
-
-    def _getAverage( self ):
-        return self.__solver.getUparv()
-
-    def calcWeightsMatrix( self, scf=10.0 ):
-        totalerrors= self.__dataparser.getTotalErrors()
-        data= self.__data
-        weights= []
-        solverdata= self._getSolverData()
-        for ival in range( len( data ) ):
-            solverdata[ival]= data[ival] + 0.5*totalerrors[ival]/scf
-            self.calcAverage( self.__lBlobel )
-            avhi= self._getAverage()
-            solverdata[ival]= data[ival] - 0.5*totalerrors[ival]/scf
-            self.calcAverage( self.__lBlobel )
-            avlo= self._getAverage()
-            delta= (avhi-avlo)/totalerrors[ival]*scf
-            weightsrow= [ item for item in delta.flat ]
-            weights.append( weightsrow )
-            solverdata[ival]= data[ival]
-        wm= matrix( weights )
-        wm= wm.getT()
-        return wm
 
     def __makeZeroMatrix( self, ndim ):
         return matrix( zeros(shape=(ndim,ndim)) )
@@ -81,36 +47,88 @@ class clsqAverage:
         errors["systcov"]= systerr
         return errors, weightsmatrix
 
-    def printErrorsAndWeights( self ):
+    def informationAnalysis( self, wm=None ):
+        if wm == None:
+            wm= self.calcWeightsMatrix()
+        nvar= wm.shape[1]
+        wml= [ w for w in wm.flat ]
+        wmtranspose= wm.getT()
+        hcov= self.__dataparser.getCovariances()
+        summ= self.__makeZeroMatrix( nvar )
+        for key in hcov.keys():
+            summ+= hcov[key]
+        Information= wm*summ*wmtranspose
+        Information= 1.0/Information
+        hinfos= {}
+        hinfosums= {}
+        totalinfom= self.__makeZeroMatrix( nvar )
+        for key in hcov.keys():
+            infom= self.__makeZeroMatrix( nvar )
+            covv= hcov[key]
+            infosum= 0.0
+            for i in range( nvar ):
+                for j in range( nvar ):
+                    info= -2.0*Information*wml[i]*wml[j]*covv[i,j]
+                    infom[i,j]= info
+                    if j > i:
+                        infosum+= info
+            totalinfom+= infom
+            hinfos[key]= infom
+            hinfosums[key]= float( infosum )
+        hinfos["total"]= totalinfom
+        return hinfos, hinfosums
+
+    def printErrorsAndWeights( self, optinfo=False ):
         errors, weightsmatrix= self.errorAnalysis()
+        navg= weightsmatrix.shape[0]
+        nval= weightsmatrix.shape[1]
+        print "\nError composition:"
+        if optinfo and navg == 1:
+            print "            +/- errors   dI/df offd. sums"
+            hinfos, hinfosums= self.informationAnalysis( weightsmatrix )
+        errorkeys= sorted( errors.keys() )
+        errorkeys.remove( "totalcov" )
+        errorkeys.remove( "systcov" )
+        for errorkey in errorkeys:
+            print "{0:>10s}:".format( stripLeadingDigits( errorkey ) ),
+            for iavg in range( navg ):
+                error= errors[errorkey]
+                print "{0:10.4f}".format( sqrt(error[iavg,iavg]) ),
+                if navg == 1 and optinfo and not ( "syst" in errorkey or
+                                                   "total" in errorkey ):
+                    print "{0:9.3f}".format( hinfosums[errorkey] ),
+            print
         names= self.__dataparser.getNames()
-        print " Variables:",
+        print "\n Variables:",
         for name in names:
             print "{0:>10s}".format( name ),
         print
-        navg= weightsmatrix.shape[0]
-        nval= weightsmatrix.shape[1]
         groups= sorted(set(self.__dataparser.getGroups()))
         for iavg in range( navg ):
             txt= "Weights"
             if navg > 1:
                 txt+= " "+str(groups[iavg])
-            print "{0:>11s}".format( txt+":" ),
+            print "{0:>10s}:".format( txt ),
             for ival in range( nval ):
                 print "{0:10.4f}".format( float(weightsmatrix[iavg,ival]) ),
             print
-        errorkeys= sorted( errors.keys() )
-        errorkeys.remove( "syst" )
-        errorkeys.remove( "total" )
-        errorkeys.remove( "totalcov" )
-        errorkeys.remove( "systcov" )
-        print "\nError composition:"
-        for errorkey in errorkeys + [ "syst", "total" ]:
-            print "{0:>10s}: ".format( stripLeadingDigits( errorkey ) ),
+        if optinfo:
+            print "  DeltaI/I:",
+            totalerrors= self.__dataparser.getTotalErrors()
             for iavg in range( navg ):
-                error= errors[errorkey]
-                print "{0:10.4f}".format( sqrt(error[iavg,iavg]) ),
-            print
+                if iavg > 0:
+                    print "           ",
+                deltaIsum= 0.0
+                for ival in range( nval ):
+                    deltaI= errors["total"][iavg,iavg]/totalerrors[ival]**2
+                    deltaIsum+= deltaI
+                    print "{0:10.4f}".format( deltaI ),
+                print "{0:10.4f}".format( 1.0-deltaIsum )
+        print "     Pulls:", 
+        pulls= self.calcPulls()
+        for ival in range( nval ):
+            print "{0:10.4f}".format( pulls[ival,0] ),
+        print
         if navg > 1:
             print "\nCorrelations:"
             totcov= errors["total"]
@@ -119,20 +137,85 @@ class clsqAverage:
                     corr= totcov[iavg,javg]/sqrt(totcov[iavg,iavg]*totcov[javg,javg])
                     print "{0:6.3f}".format( corr ),
                 print
+        elif optinfo:
+            print "\n dI/df offdiagonal sums over error sources:"
+            totalinfom= hinfos["total"]
+            for i in range( nval ):
+                for j in range( nval ):
+                    if j > i:
+                        print "{0:7.3f}".format( totalinfom[i,j] ),
+                    else:
+                        print "       ",
+                print
         print
         return
+
+    # Calculate pulls:
+    def _columnVector( self, inlist ):
+        v= matrix( inlist )
+        v.shape= ( len(inlist), 1 )
+        return v
+    def calcPulls( self ):
+        avg= self._getAverage()
+        dataparser= self._getDataparser()
+        v= self._columnVector( dataparser.getValues() )
+        gm= matrix( dataparser.getGroupMatrix() )
+        errors= self._columnVector( dataparser.getTotalErrors() )
+        delta= v - gm*avg
+        pulls= delta/errors
+        return pulls
+
+
+class FitAverage( Average ):
+
+    def __init__( self, filename ):
+        Average.__init__( self, filename )
+        self.__data= self._getDataparser().getValues()
+        self.__solver= self.__setupSolver()
+        return
+
+    def runSolver( self ):
+        self.__solver.solve()
+        return
+
+    def _getSolverData( self ):
+        return self.__solver.getData()
+
+    def _getAverage( self ):
+        self.__solver.solve()
+        return self.__solver.getUparv()
+    
+    def calcWeightsMatrix( self, scf=10.0 ):
+        dataparser= self._getDataparser()
+        totalerrors= dataparser.getTotalErrors()
+        data= self.__data
+        weights= []
+        solverdata= self._getSolverData()
+        for ival in range( len( data ) ):
+            solverdata[ival]= data[ival] + 0.5*totalerrors[ival]/scf
+            avhi= self._getAverage()
+            solverdata[ival]= data[ival] - 0.5*totalerrors[ival]/scf
+            avlo= self._getAverage()
+            delta= (avhi-avlo)/totalerrors[ival]*scf
+            weightsrow= [ item for item in delta.flat ]
+            weights.append( weightsrow )
+            solverdata[ival]= data[ival]
+        wm= matrix( weights )
+        wm= wm.getT()
+        return wm
 
     def printResults( self, ffmt=".4f", cov=False, corr=False ):
         self.__solver.printResults( ffmt=ffmt, cov=cov, corr=corr )
         print
         return
 
-    def getAverage( self ):
-        return self.__solver.getUpar()[0], self.__solver.getUparErrors()[0]
+    def getAveragesAndErrors( self ):
+        return self.__solver.getUpar(), self.__solver.getUparErrors()
 
     def getSolver( self ):
         return self.__solver
 
+    # Setup extra unmeasured parameters for correlated systematics:
     def __addParameter( self, extrapars, extraparerrors, parnames,
                         ndata, ncorrsyst, errorkey, parindxmaps, ierr ):
         extrapars.append( 0.0 )
@@ -143,12 +226,11 @@ class clsqAverage:
             indxmap[ival]= ncorrsyst
         parindxmaps[ierr]= indxmap
         return
-
-    # Setup extra unmeasured parameters for correlated systematics:
     def __createExtraPars( self ):
-        herrors= self.__dataparser.getErrors()
-        correlations= self.__dataparser.getCorrelations()
-        hcovopt= self.__dataparser.getCovoption()
+        dataparser= self._getDataparser()
+        herrors= dataparser.getErrors()
+        correlations= dataparser.getCorrelations()
+        hcovopt= dataparser.getCovoption()
         extrapars= []
         extraparerrors= []
         extraparnames= []
@@ -199,21 +281,6 @@ class clsqAverage:
 
         return extrapars, extraparerrors, extraparnames, parindxmaps, errorkeys
 
-
-    # Add "measured parameter" errors to diagonal of covariance matrix:
-    def __addExtraparErrors( self, covm, extraparerrors ):
-        ndata= len( covm )
-        for line in covm:
-            for extraparerror in extraparerrors:
-                line.append( 0.0 )
-        nextrapar= len( extraparerrors )
-        for ipar in range( nextrapar ):
-            row= (ndata+nextrapar)*[ 0.0 ]
-            row[ndata+ipar]= extraparerrors[ipar]
-            covm.append( row )
-        return covm
-
-
     # Prepare inputs and initialise the solver:
     def __setupSolver( self ):
 
@@ -222,7 +289,8 @@ class clsqAverage:
         ndata= len( data )
         datav= matrix( data )
         datav.shape= (ndata,1)
-        groupmatrix= self.__dataparser.getGroupMatrix()
+        dataparser= self._getDataparser()
+        groupmatrix= dataparser.getGroupMatrix()
         gm= matrix( groupmatrix )
         uparv= gm.getT()*datav/(float(gm.shape[0])/float(gm.shape[1]))
         upar= [ par for par in uparv.flat ]
@@ -238,13 +306,13 @@ class clsqAverage:
             upnames.append( "Average" )
 
         # Set the measured parameter names:
-        mpnames= self.__dataparser.getNames()
+        mpnames= dataparser.getNames()
 
         # Create extra unmeasured parameters for correlated systematics:
         extrapars, extraparerrors, extraparnames, parindexmaps, errorkeys= self.__createExtraPars()
 
         # Get matrix of systematic errors for constraints function:
-        systerrormatrix= self.__dataparser.getSysterrorMatrix()
+        systerrormatrix= dataparser.getSysterrorMatrix()
 
         # Now make the solver:
         solver= self._createSolver( gm, parindexmaps, errorkeys, 
@@ -256,6 +324,14 @@ class clsqAverage:
         return solver
 
 
+class clsqAverage( FitAverage ):
+
+    def __init__( self, filename, lBlobel=False ):
+        FitAverage.__init__( self, filename )
+        self.__lBlobel= lBlobel
+        return
+
+    # Create clsq solver:
     def _createSolver( self, gm, parindxmaps, errorkeys, 
                        systerrormatrix, data,
                        extrapars, extraparerrors, upar, 
@@ -263,11 +339,11 @@ class clsqAverage:
 
         # Get reduced covariance matrix and add "measured parameter"
         # errors to diagonal:
-        covm= self.__dataparser.getTotalReducedCovarianceAslist()
+        dataparser= self._getDataparser()
+        covm= dataparser.getTotalReducedCovarianceAslist()
         self.__addExtraparErrors( covm, extraparerrors )
-
-        hcovopt= self.__dataparser.getCovoption()
-        originaldata= self.__dataparser.getValues()
+        hcovopt= dataparser.getCovoption()
+        originaldata= dataparser.getValues()
         ndata= len( data )
 
         # Constraints function for average:
@@ -304,3 +380,27 @@ class clsqAverage:
 
         return solver
 
+    # Add "measured parameter" errors to diagonal of covariance matrix:
+    def __addExtraparErrors( self, covm, extraparerrors ):
+        ndata= len( covm )
+        for line in covm:
+            for extraparerror in extraparerrors:
+                line.append( 0.0 )
+        nextrapar= len( extraparerrors )
+        for ipar in range( nextrapar ):
+            row= (ndata+nextrapar)*[ 0.0 ]
+            row[ndata+ipar]= extraparerrors[ipar]
+            covm.append( row )
+        return covm
+
+    def printInputs( self ):
+        FitAverage.printInputs( self )
+        print "\nConstraints before solution:"
+        solver= self.getSolver()
+        print solver.getConstraints()
+        return
+
+    def runSolver( self ):
+        solver= self.getSolver()
+        solver.solve( lBlobel=self.__lBlobel )
+        return
