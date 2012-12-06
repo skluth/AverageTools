@@ -12,15 +12,15 @@ class minuitAverageTest( unittest.TestCase ):
 
     def setUp( self ):
         self.__ma= minuitAverage( "test.txt" )
-        self.__ma.calcAverage()
+        self.__ma.runSolver()
         return
 
-    def test_getAverage( self ):
-        val, error= self.__ma.getAverage()
+    def test_getAveragesAndErrors( self ):
+        val, error= self.__ma.getAveragesAndErrors()
         expectedval= 170.709196921
         expectederror= 2.9668615985
-        self.assertAlmostEqual( val, expectedval )
-        self.assertAlmostEqual( error, expectederror )
+        self.assertAlmostEqual( val[0], expectedval )
+        self.assertAlmostEqual( error[0], expectederror )
         return
 
     def test_fitpars( self ):
