@@ -16,6 +16,12 @@ class Average:
         self.__dataparser.printInputs()
         return
 
+    def getAveragesAndErrors( self ):
+        averages= [ a for a in self._getAverage().flat ]
+        herrors, wm= self.errorAnalysis()
+        errors= [ sqrt(e) for e in herrors["total"] ]
+        return averages, errors
+
     def _getDataparser( self ):
         return self.__dataparser
 
@@ -82,7 +88,7 @@ class Average:
         errors, weightsmatrix= self.errorAnalysis()
         navg= weightsmatrix.shape[0]
         nval= weightsmatrix.shape[1]
-        print "\nError composition:"
+        print "Error composition:"
         if optinfo and navg == 1:
             print "            +/- errors   dI/df offd. sums"
             hinfos, hinfosums= self.informationAnalysis( weightsmatrix )
@@ -140,9 +146,15 @@ class Average:
         elif optinfo:
             print "\n dI/df offdiagonal sums over error sources:"
             totalinfom= hinfos["total"]
-            for i in range( nval ):
+            print "       ",
+            for name in names[1:]:
+                print "{0:>7s}".format( name ),
+            print
+            for i in range( nval-1 ):
                 for j in range( nval ):
-                    if j > i:
+                    if j == 0 and i < nval-1:
+                        print "{0:>7s}".format( names[i] ),
+                    elif j > i:
                         print "{0:7.3f}".format( totalinfom[i,j] ),
                     else:
                         print "       ",
@@ -298,7 +310,7 @@ class FitAverage( Average ):
         # Set the name(s) of the unmeasured (average) fit parameters:
         upnames= []
         if len( upar ) > 1:
-            groups= self.__dataparser.getGroups()
+            groups= dataparser.getGroups()
             groupset= sorted( set( groups ) )
             for i in range( len( upar ) ):
                 upnames.append( "Average " + str( groupset[i] ) )
