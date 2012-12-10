@@ -88,8 +88,8 @@ class minuitSolver():
         print fmtstr.format( hstat["edm"], hstat["status"] )
         print "\nFitted parameters and errors"
         print "           Name       Value          Error"
-        pars= self.getUpar()
-        parerrors= self.getUparErrors()
+        pars= self.getPar()
+        parerrors= self.getParErrors()
         self.__printPars( pars, parerrors, self.__parnames, ffmt=ffmt )
         if cov:
             self.printCovariances()
@@ -119,15 +119,15 @@ class minuitSolver():
         self.__printMatrix( self.getCorrelationmatrix(), ".3f" )
         return
 
-    def getUpar( self ):
+    def getPar( self ):
         pars, parerrors= self.__getPars()
         return pars
     def getUparv( self ):
-        pars= self.getUpar()
+        pars= self.getPar()
         parv= matrix( pars )
         parv.shape= (len(pars),1)
         return parv
-    def getUparErrors( self ):
+    def getParErrors( self ):
         pars, parerrors= self.__getPars()
         return parerrors
     def __getPars( self ):
