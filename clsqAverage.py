@@ -90,7 +90,7 @@ class Average:
         nval= weightsmatrix.shape[1]
         print "Error composition:"
         if optinfo and navg == 1:
-            print "            +/- errors   dI/df offd. sums"
+            print "            +/- errors   dI/df/I offd. sums"
             hinfos, hinfosums= self.informationAnalysis( weightsmatrix )
         errorkeys= sorted( errors.keys() )
         errorkeys.remove( "totalcov" )
@@ -144,7 +144,7 @@ class Average:
                     print "{0:6.3f}".format( corr ),
                 print
         elif optinfo:
-            print "\n dI/df offdiagonal sums over error sources:"
+            print "\n dI/df/I offdiagonal sums over error sources:"
             totalinfom= hinfos["total"]
             print "       ",
             for name in names[1:]:
@@ -222,12 +222,12 @@ class FitAverage( Average ):
         return
 
     def getAveragesAndErrors( self ):
-        return self.__solver.getUpar(), self.__solver.getUparErrors()
+        return self.__solver.getPar(), self.__solver.getParErrors()
 
     def getSolver( self ):
         return self.__solver
 
-    # Setup extra unmeasured parameters for correlated systematics:
+    # Setup extra measured parameters for correlated systematics:
     def __addParameter( self, extrapars, extraparerrors, parnames,
                         ndata, ncorrsyst, errorkey, parindxmaps, ierr ):
         extrapars.append( 0.0 )
