@@ -64,18 +64,18 @@ class minuitSolverTest( unittest.TestCase ):
         self.assertEqual( ndof, expectedNdof )
         return
 
-    def test_getUpar( self ):
+    def test_getPar( self ):
         self.__solver.solve()
-        pars= self.__solver.getUpar()
+        pars= self.__solver.getPar()
         expectedpars= [ 167.1022776, -0.48923998, -1.13417736, 
                         -1.21202615 ]
         for par, expectedpar in zip( pars, expectedpars ):
             self.assertAlmostEqual( par, expectedpar, places=6 )
         return
 
-    def test_getUparErrors( self ):
+    def test_getParErrors( self ):
         self.__solver.solve()
-        parerrors= self.__solver.getUparErrors()
+        parerrors= self.__solver.getParErrors()
         expectedparerrors= [ 1.4395944, 0.96551507, 0.78581713, 0.72292831 ]
         for parerror, expectedparerror in zip( parerrors, expectedparerrors ):
             self.assertAlmostEqual( parerror, expectedparerror, places=6 )
