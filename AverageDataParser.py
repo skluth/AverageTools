@@ -24,6 +24,7 @@ class AverageDataParser:
         parser= ConfigParser.ConfigParser()
         parser.read( filename )
         self.__readData( parser )
+        self.__readGlobals( parser )
         self.__readCovariances( parser )
         self.__makeCovariances()
         return
@@ -68,6 +69,21 @@ class AverageDataParser:
             groupmatrixrow[index]=1
             groupmatrix.append( groupmatrixrow )
         self.__groupmatrix= groupmatrix
+        return
+
+    def __readGlobals( self, parser ):
+        hglobals= {}
+        try:
+            tuplelist= parser.items( "Globals" )
+        except ConfigParser.NoSectionError:
+            pass
+        else:
+            for item in tuplelist:
+                key= item[0]
+                value= item[1]
+                if key == "correlationfactor":
+                    hglobals[key]= float( value )
+        self.__hglobals= hglobals
         return
 
     # Read "Covariances" section if it exists:
@@ -128,8 +144,10 @@ class AverageDataParser:
             # Global options, all covariances according to
             # same rule gp, p, f or u:
             if "gpr" in covoption:
+                #minrelerr= min( [ err/value for err, value in 
+                #                  zip( errors, self.__inputs ) ] )
                 minrelerr= min( [ err/value for err, value in 
-                                  zip( errors, self.__inputs ) ] )
+                                  zip( errors, self.__inputs ) if err > 0.0 ] )
                 systerrlist= []
                 for iderr1 in range(nerrors):
                     for iderr2 in range(nerrors):
@@ -145,7 +163,8 @@ class AverageDataParser:
                     systerrlist.append( minrelerr*self.__inputs[iderr1] )
                 systerrormatrix[nerr]= systerrlist
             elif( "gp" in covoption ):
-                minerr= min( errors )
+                # minerr= min( errors )
+                minerr= min( [ error for error in errors if error > 0.0 ] )
                 systerrlist= []
                 for iderr1 in range(nerrors):
                     for iderr2 in range(nerrors):
@@ -182,9 +201,10 @@ class AverageDataParser:
                 if "o" in covoption:
                     for iderr1 in range( nerrors ):
                         for iderr2 in range( nerrors ):
-                            ierr= iderr1*nerrors+iderr2
-                            lcov[ierr]= min( lcov[ierr],
-                                             min( errors[iderr1], errors[iderr2] )**2 )
+                            if errors[iderr1] > 0.0 and errors[iderr2] > 0.0:
+                                ierr= iderr1*nerrors+iderr2
+                                lcov[ierr]= min( lcov[ierr],
+                                                 min( errors[iderr1], errors[iderr2] )**2 )
                 lredcov= lcov
             # Covariances from options:
             elif "m" in covoption:
@@ -206,6 +226,14 @@ class AverageDataParser:
                 return
 
             m= self.__makeMatrixFromList( lcov )
+
+            if self.__hglobals.has_key( "correlationfactor" ):
+                for i in range(m.shape[0]):
+                    for j in range(m.shape[1]):
+                        if i != j and m[i,i]*m[j,j] != 0.0:
+                            m[i,j]*= m[i,j]/(sqrt(m[i,i]*m[j,j]))*self.__hglobals["correlationfactor"]
+
+
             redm= self.__makeMatrixFromList( lredcov )
             cov+= m
             redcov+= redm
