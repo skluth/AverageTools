@@ -144,22 +144,27 @@ class Average:
                     print "{0:6.3f}".format( corr ),
                 print
         elif optinfo:
-            print "\n dI/df/I offdiagonal sums over error sources:"
-            totalinfom= hinfos["total"]
-            print "       ",
-            for name in names[1:]:
-                print "{0:>7s}".format( name ),
-            print
-            for i in range( nval-1 ):
-                for j in range( nval ):
-                    if j == 0 and i < nval-1:
-                        print "{0:>7s}".format( names[i] ),
-                    elif j > i:
-                        print "{0:7.3f}".format( totalinfom[i,j] ),
-                    else:
-                        print "       ",
+            print "\n dI/df/I offdiagonals per error source:"
+            keys= sorted( hinfos.keys() )
+            #keys.remove( "01stat" )
+            keys= [ key for key in keys if not "stat" in key ]
+            for key in keys:
+                print "{0:>10s}:".format( stripLeadingDigits( key ) )
+                infom= hinfos[key]
+                print "       ",
+                for name in names[1:]:
+                    print "{0:>7s}".format( name ),
                 print
-        print
+                for i in range( nval-1 ):
+                    for j in range( nval ):
+                        if j == 0 and i < nval-1:
+                            print "{0:>7s}".format( names[i] ),
+                        elif j > i:
+                            print "{0:7.4f}".format( infom[i,j] ),
+                        else:
+                            print "       ",
+                    print
+                print
         return
 
     # Calculate pulls:
