@@ -58,26 +58,29 @@ class Blue( Average ):
         return chisq
 
     # Print the input data:
-    def printInputs( self, cov=False  ):
+    def __printMatrix( self, m, fmt="8.4f" ):
+        for i in range( m.shape[0] ):
+            for j in range( m.shape[1] ):
+                print ("{0:"+fmt+"}").format( m[i,j] ),
+            print
+    def printInputs( self, printcovopt=False  ):
         print "\n Best Linear Unbiased Estimator average"
         self.dataparser.printInputs()
-        if cov:
+        if printcovopt:
             print "\n Covariance matrices:"
-            numpy.set_printoptions( linewidth=132, precision=3 )
             for key in sorted( self.hcov.keys() ):
                 print "{0:>10s}:".format( stripLeadingDigits( key ) )
-                print self.hcov[key]
+                self.__printMatrix( self.hcov[key] )
             print "Total covariance:"
-            print self.cov
+            self.__printMatrix( self.cov )
             corr= numpy.matrix( self.cov )
             for i in range( corr.shape[0] ):
                 for j in range( corr.shape[1] ):
                     corr[i,j]= self.cov[i,j]/sqrt( self.cov[i,i]*self.cov[j,j] )
             print "Total correlation:"
-            print corr
+            self.__printMatrix( corr, "6.3f" )
             print "Inverse:"
-            print self.inv
-            numpy.set_printoptions()
+            self.__printMatrix( self.inv )
         return
 
     # Print results:
