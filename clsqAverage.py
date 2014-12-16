@@ -196,7 +196,7 @@ class FitAverage( Average ):
         return
 
     def _getSolverData( self ):
-        return self.__solver.getData()
+        return self.__solver.getDatav()
 
     def _getAverage( self ):
         self.__solver.solve()
