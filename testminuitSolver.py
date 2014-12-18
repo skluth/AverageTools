@@ -66,7 +66,7 @@ class minuitSolverTest( unittest.TestCase ):
 
     def test_getPar( self ):
         self.__solver.solve()
-        pars= self.__solver.getPar()
+        pars= self.__solver.getPars()
         expectedpars= [ 167.1022776, -0.48923998, -1.13417736, 
                         -1.21202615 ]
         for par, expectedpar in zip( pars, expectedpars ):
