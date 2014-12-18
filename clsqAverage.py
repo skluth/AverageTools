@@ -1,5 +1,6 @@
 
 from AverageDataParser import AverageDataParser, stripLeadingDigits
+from minuitSolver import minuitSolver
 from ConstrainedFit import clsq
 from math import sqrt, exp
 from numpy import matrix, zeros
@@ -222,12 +223,16 @@ class FitAverage( Average ):
         return wm
 
     def printResults( self, ffmt=".4f", cov=False, corr=False ):
-        self.__solver.printResults( ffmt=ffmt, cov=cov, corr=corr )
+        if isinstance( self.__solver, minuitSolver ):
+            self.__solver.printResults( ffmt=ffmt, cov=cov, corr=corr )
+        elif isinstance( self.__solver, clsq.clsqSolver ):
+            ca= clsq.clsqAnalysis( self.__solver )
+            ca.printResults( ffmt=ffmt, cov=cov, corr=corr )
         print
         return
 
     def getAveragesAndErrors( self ):
-        return self.__solver.getPar(), self.__solver.getParErrors()
+        return self.__solver.getPars(), self.__solver.getParErrors()
 
     def getSolver( self ):
         return self.__solver
