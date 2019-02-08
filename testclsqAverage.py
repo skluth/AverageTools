@@ -25,19 +25,18 @@ class clsqAverageTest( unittest.TestCase ):
 
     def test_mpars( self ):
         solver= self.__ca.getSolver()
-        mpar= solver.getMpar()
+        mpars= solver.getMpars()
         mparerrors= solver.getMparErrors()
-        expectedmpar= [ 171.51710348441537, 172.29268242120295, 
-                        172.55882080482172, 
-                        -0.24715555753633961, -0.41819040151052728 ]
-
+        expectedmpars= [ 171.51710348441537, 172.29268242120295, 
+                         172.55882080482172, 
+                         -0.24715555753633961, -0.41819040151052728 ]
         expectedmparerrors= [ 2.6568482263780098, 2.9263187806182231, 
                               3.1214377706098424, 
                               0.95849417709990359, 0.81760662703871312 ]
-        for par, expectedpar in zip( mpar, expectedmpar ):
+        for par, expectedpar in zip( mpars, expectedmpars ):
             self.assertAlmostEqual( par, expectedpar )
-        for par, expectedpar in zip( mparerrors, expectedmparerrors ):
-            self.assertAlmostEqual( par, expectedpar )
+        for err, expectederr in zip( mparerrors, expectedmparerrors ):
+            self.assertAlmostEqual( err, expectederr )
         return
 
     def test_fitpars( self ):
