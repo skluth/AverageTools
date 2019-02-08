@@ -55,7 +55,7 @@ class Average:
         return errors, weightsmatrix
 
     def informationAnalysis( self, wm=None ):
-        if wm == None:
+        if wm is None:
             wm= self.calcWeightsMatrix()
         nvar= wm.shape[1]
         wml= [ w for w in wm.flat ]

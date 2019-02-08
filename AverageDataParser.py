@@ -52,7 +52,7 @@ class AverageDataParser:
             if "%" in hcovopt[key]:
                 for ierr in range( len(herrors[key]) ):
                     herrors[key][ierr]*= ldata[ierr]/100.0
-        if grouplist == None:
+        if grouplist is None:
             grouplist= [ "a" for name in names ]
         self.__names= names
         self.__inputs= ldata
@@ -250,7 +250,7 @@ class AverageDataParser:
 
     # Print inputs:
     def printInputs( self, keys=None ):
-        if keys == None:
+        if keys is None:
             keys= self.__errors.keys()
             keys.sort()
         print "\n AverageDataParser: input from", self.__filename
@@ -316,7 +316,7 @@ class AverageDataParser:
     def getCovoption( self ):
         return dict( self.__covopts )
     def getCorrelations( self ):
-        if self.__correlations == None:
+        if self.__correlations is None:
             return None
         else:
             return dict( self.__correlations )
