@@ -1,7 +1,7 @@
 
 import numpy
 import ConfigParser
-from math import sqrt
+from math import sqrt, log
 
 
 def stripLeadingDigits( word ):
@@ -13,20 +13,31 @@ def stripLeadingDigits( word ):
 class AverageDataParser:
 
     # C-tor, read inputs and calculate covariances:
-    def __init__( self, filename ):
+    def __init__( self, filename, llogNormal=False ):
         self.__correlations= None
         self.__filename= filename
-        self.__readInput( filename )
+        self.__readInput( filename, llogNormal )
         return
 
     # Read inputs using ConfigParser:
-    def __readInput( self, filename ):
+    def __readInput( self, filename, llogNormal ):
         parser= ConfigParser.ConfigParser()
         parser.read( filename )
         self.__readData( parser )
         self.__readGlobals( parser )
         self.__readCovariances( parser )
+        if llogNormal:
+            self.__transformLogNormal()
         self.__makeCovariances()
+        return
+
+    def __transformLogNormal( self ):
+        herrors= {}
+        for key in self.__errors.keys():
+            errors= [ error/value for ( error, value ) in zip( self.__errors[key], self.__inputs  ) ]
+            herrors[key]= errors
+        self.__errors= herrors
+        self.__inputs= [ log( value ) for value in self.__inputs ]
         return
 
     # Read "Data" section:

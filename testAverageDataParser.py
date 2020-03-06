@@ -7,7 +7,35 @@ import unittest
 
 from AverageDataParser import AverageDataParser, stripLeadingDigits
 from numpy import matrix
+from math import log
 
+
+class AverageDataParserLogNormalTest( unittest.TestCase ):
+
+    def setUp( self ):
+        self.__parser= AverageDataParser( "test.txt", llogNormal=True )
+        return
+
+    def test_getValues( self ):
+        values= self.__parser.getValues()
+        expectedvalues= [ log(value) for value in [ 171.5, 173.1, 174.5 ] ]
+        for value, expectedvalue in zip( values, expectedvalues ):
+            self.assertAlmostEqual( value, expectedvalue )
+
+    def test_getErrors( self ):
+        expectedvalues= [ 171.5, 173.1, 174.5 ]
+        expectederrors= { '00stat': [ 0.3, 0.33, 0.4 ], 
+                          '01err1': [ 1.1, 1.3, 1.5 ], 
+                          '02err2': [ 0.9, 1.5, 1.9 ], 
+                          '03err3': [ 2.4, 3.1, 3.5 ], 
+                          '04err4': [ 1.4, 2.9, 3.3 ] }
+        for key in expectederrors.keys():
+            expectederrors[key]= [ error/value for ( value, error )
+                                    in zip( expectedvalues, expectederrors[key] ) ]
+        errors= self.__parser.getErrors()
+        for key in errors.keys():
+            self.assertEqual( errors[key], expectederrors[key] )
+        return
 
 class AverageDataParserTest( unittest.TestCase ):
 
@@ -33,7 +61,7 @@ class AverageDataParserTest( unittest.TestCase ):
         for value, expectedvalue in zip( values, expectedvalues ):
             self.assertAlmostEqual( value, expectedvalue )
         return
-
+            
     def test_getErrors( self ):
         errors= self.__parser.getErrors()
         expectederrors= { '00stat': [ 0.3, 0.33, 0.4 ], 
@@ -286,9 +314,10 @@ class AverageDataParserOptionsTest( unittest.TestCase ):
 
 if __name__ == '__main__':
     suite1= unittest.TestLoader().loadTestsFromTestCase( AverageDataParserTest )
-    suite2= unittest.TestLoader().loadTestsFromTestCase( AverageDataParserGroupTest )
-    suite3= unittest.TestLoader().loadTestsFromTestCase( AverageDataParserOptionsTest )
-    for suite in [ suite1, suite2, suite3 ]:
+    suite2= unittest.TestLoader().loadTestsFromTestCase( AverageDataParserLogNormalTest )
+    suite3= unittest.TestLoader().loadTestsFromTestCase( AverageDataParserGroupTest )
+    suite4= unittest.TestLoader().loadTestsFromTestCase( AverageDataParserOptionsTest )
+    for suite in [ suite1, suite2, suite3, suite4 ]:
         unittest.TextTestRunner( verbosity=2 ).run( suite )
 
 
