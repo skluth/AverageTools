@@ -9,8 +9,8 @@ from numpy import matrix, zeros
 class Average:
 
     # C-tor, setup parser, covariances and weights:
-    def __init__( self, filename ):
-        self.__dataparser= AverageDataParser( filename )
+    def __init__( self, filename, llogNormal=False ):
+        self.__dataparser= AverageDataParser( filename, llogNormal )
         return
 
     def printInputs( self ):
@@ -186,8 +186,8 @@ class Average:
 
 class FitAverage( Average ):
 
-    def __init__( self, filename ):
-        Average.__init__( self, filename )
+    def __init__( self, filename, llognormal=False ):
+        Average.__init__( self, filename, llognormal )
         self.__data= self._getDataparser().getValues()
         self.__solver= self.__setupSolver()
         return
@@ -348,8 +348,8 @@ class FitAverage( Average ):
 
 class clsqAverage( FitAverage ):
 
-    def __init__( self, filename, lBlobel=False ):
-        FitAverage.__init__( self, filename )
+    def __init__( self, filename, lBlobel=False, llognormal=False ):
+        FitAverage.__init__( self, filename, llognormal )
         self.__lBlobel= lBlobel
         return
 

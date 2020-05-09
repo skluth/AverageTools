@@ -14,8 +14,8 @@ from ROOT import TMath
 class Blue( Average ):
 
     # C-tor, setup parser, covariances and weights:
-    def __init__( self, filename ):
-        Average.__init__( self, filename )
+    def __init__( self, filename, llogNormal=False ):
+        Average.__init__( self, filename, llogNormal )
         self.dataparser= self._getDataparser()
         self.errors= self.dataparser.getErrors()
         self.names= self.dataparser.getNames()

@@ -8,7 +8,8 @@
 # 5/2012 S Kluth
 
 
-from ROOT import TMinuit, Double, Long, TMath
+from ctypes import c_double, c_int
+from ROOT import TMinuit, TMath
 from numpy import matrix, array
 from math import sqrt
 
@@ -134,14 +135,14 @@ class minuitSolver():
         pars= []
         parerrors= []
         for ipar in range( len( self.__pars ) ):
-            par= Double()
-            pare= Double()
+            par= c_double()
+            pare= c_double()
             ivarbl= self.__minuit.GetParameter( ipar, par, pare )
             if ivarbl < 0:
                 message= "Parameter " + str(ipar) + " not defined"
                 raise MinuitError( message )
-            pars.append( par )
-            parerrors.append( pare )
+            pars.append( par.value )
+            parerrors.append( pare.value )
         return pars, parerrors
 
     def getCovariancematrix( self ):
@@ -161,18 +162,18 @@ class minuitSolver():
         return corrm
 
     def __getStat( self ):
-        fmin= Double()
-        fedm= Double()
-        errdef= Double()
-        npari= Long()
-        nparx= Long()
-        istat= Long()
+        fmin= c_double()
+        fedm= c_double()
+        errdef= c_double()
+        npari= c_int()
+        nparx= c_int()
+        istat= c_int()
         self.__minuit.mnstat( fmin, fedm, errdef, npari, nparx, istat )
-        hstat= { "min": fmin, 
-                 "edm": fedm, 
-                 "errdef": errdef, 
-                 "npari": npari, 
-                 "nparx": nparx, 
-                 "status": istat }
+        hstat= { "min": fmin.value, 
+                 "edm": fedm.value, 
+                 "errdef": errdef.value, 
+                 "npari": npari.value, 
+                 "nparx": nparx.value, 
+                 "status": istat.value }
         return hstat
 

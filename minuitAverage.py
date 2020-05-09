@@ -12,8 +12,8 @@ from math import log
 
 class minuitAverage( FitAverage ):
 
-    def __init__( self, filename ):
-        FitAverage.__init__( self, filename )
+    def __init__( self, filename, llognormal=False ):
+        FitAverage.__init__( self, filename, llognormal )
         return
 
     # Used by base class to create the least squares solver
