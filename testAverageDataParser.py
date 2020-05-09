@@ -178,7 +178,7 @@ class AverageDataParserTest( unittest.TestCase ):
         printout= output.getvalue()
         expectedprintout= "\n AverageDataParser: input from test.txt\n\
 \n\
- Variables:       Val1       Val2       Val3 Covariance option\n\
+ Variables:       Val1       Val2       Val3 Cov. opt.\n\
 \n\
     Values:   171.5000   173.1000   174.5000\n\
       stat:     0.3000     0.3300     0.4000 c\n\
@@ -283,6 +283,12 @@ class AverageDataParserOptionsTest( unittest.TestCase ):
                 self.assertAlmostEqual( systerr, expectedsysterr ) 
         return
 
+    def test_Rvalues( self ):
+        rvalue= self.__parser.getRvalues()
+        expectedRvalue= { "errc": 0.1 }
+        self.assertEqual( rvalue, expectedRvalue )
+        return
+    
 
 if __name__ == '__main__':
     suite1= unittest.TestLoader().loadTestsFromTestCase( AverageDataParserTest )

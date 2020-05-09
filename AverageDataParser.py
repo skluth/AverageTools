@@ -24,6 +24,7 @@ class AverageDataParser:
         parser= ConfigParser.ConfigParser()
         parser.read( filename )
         self.__readData( parser )
+        self.__readRvalues( parser )
         self.__readGlobals( parser )
         self.__readCovariances( parser )
         self.__makeCovariances()
@@ -70,7 +71,26 @@ class AverageDataParser:
             groupmatrix.append( groupmatrixrow )
         self.__groupmatrix= groupmatrix
         return
-
+    
+    def __readRvalues( self, parser ):
+        hcovopt= self.__covopts
+        if sum( [ "R" in v for v in hcovopt.values() ] ):
+            hrvalues= {}
+            for key in hcovopt.keys():
+                if "R" in hcovopt[key]:
+                    rvalue= parser.get( "Rvalues", key )
+                    strippedKey= stripLeadingDigits( key )
+                    hrvalues[strippedKey]= float( rvalue )
+            self.__hrvalues= hrvalues
+        else:
+            self.__hrvalues= None
+        return
+    def getRvalues( self ):
+        if self.__hrvalues is None:
+            return dict()
+        else:
+            return dict( self.__hrvalues )
+    
     def __readGlobals( self, parser ):
         hglobals= {}
         try:
@@ -257,7 +277,11 @@ class AverageDataParser:
         print "\n Variables:", 
         for name in self.__names:
             print "{0:>10s}".format( name ),
-        print "Covariance option"
+        print "Cov. opt.",
+        if sum( [ "R" in opt for opt in self.__covopts.values() ] ):
+            print "Error uncertainty"
+        else:
+            print
         if len( set( self.__groups ) ) > 1:
             print "\n    Groups:", 
             for groupindex in self.__groups:
@@ -271,7 +295,11 @@ class AverageDataParser:
             print "{0:>10s}:".format( stripLeadingDigits( key ) ),
             for error in self.__errors[key]:
                 print "{0:10.4f}".format( error ),
-            print self.__covopts[key]
+            print self.__covopts[key],
+            if "R" in self.__covopts[key]:
+                print "{0:11.2f}".format( self.__hrvalues[stripLeadingDigits(key)] )
+            else:
+                print            
         totalerrors= self.getTotalErrors()
         print "\n     total:",
         for error in totalerrors:
