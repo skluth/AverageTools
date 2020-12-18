@@ -1,6 +1,6 @@
 
 import numpy
-import ConfigParser
+import configparser
 from math import sqrt, log
 
 
@@ -21,7 +21,7 @@ class AverageDataParser:
 
     # Read inputs using ConfigParser:
     def __readInput( self, filename, llogNormal ):
-        parser= ConfigParser.ConfigParser()
+        parser= configparser.ConfigParser( interpolation=None )
         parser.read( filename )
         self.__readData( parser )
         self.__readRvalues( parser )
@@ -106,7 +106,7 @@ class AverageDataParser:
         hglobals= {}
         try:
             tuplelist= parser.items( "Globals" )
-        except ConfigParser.NoSectionError:
+        except configparser.NoSectionError:
             pass
         else:
             for item in tuplelist:
@@ -249,12 +249,13 @@ class AverageDataParser:
 
             # Error in option:
             else:
-                print "Option", covoption, "not recognised"
+                print( "Option", covoption, "not recognised" )
                 return
 
             m= self.__makeMatrixFromList( lcov )
 
-            if self.__hglobals.has_key( "correlationfactor" ):
+            # if self.__hglobals.has_key( "correlationfactor" ):
+            if "correlationfactor" in self.__hglobals:
                 for i in range( m.shape[0] ):
                     for j in range( m.shape[1] ):
                         if i != j and m[i,i]*m[j,j] != 0.0:
@@ -307,46 +308,44 @@ class AverageDataParser:
     # Print inputs:
     def printInputs( self, keys=None ):
         if keys is None:
-            keys= self.__errors.keys()
-            keys.sort()
-        print "\n AverageDataParser: input from", self.__filename
-        print "\n Variables:", 
+            keys= sorted( self.__errors.keys() )
+        print( "\n AverageDataParser: input from", self.__filename )
+        print( "\n Variables:", end= " " )
         for name in self.__names:
-            print "{0:>10s}".format( name ),
-        print "Cov. opt.",
+            print( "{0:>10s}".format( name ), end=" " )
+        print( "Cov. opt.", end=" " )
         if sum( [ "R" in opt for opt in self.__covopts.values() ] ):
-            print "Error uncertainty"
+            print( "Error uncertainty" )
         else:
-            print
+            print()
         if len( set( self.__groups ) ) > 1:
-            print "\n    Groups:", 
+            print( "\n    Groups:", end=" " )
             for groupindex in self.__groups:
-                print "{0:>10s}".format( groupindex ),
-            print
-        print "\n    Values:", 
+                print( "{0:>10s}".format( groupindex ), end="" )
+            print()
+        print( "\n    Values:", end=" " )
         for value in self.__inputs:
-            print "{0:10.4f}".format( value ),
-        print
+            print( "{0:10.4f}".format( value ), end=" " )
+        print()
         for key in keys:
-            print "{0:>10s}:".format( stripLeadingDigits( key ) ),
+            print( "{0:>10s}:".format( stripLeadingDigits( key ) ), end=" " )
             for error in self.__errors[key]:
-                print "{0:10.4f}".format( error ),
-            print self.__covopts[key],
+                print( "{0:10.4f}".format( error ), end=" " )
+            print( self.__covopts[key], end=" " )
             if "R" in self.__covopts[key]:
-                print "{0:11.2f}".format( self.__hrvalues[stripLeadingDigits(key)] )
+                print( "{0:11.2f}".format( self.__hrvalues[stripLeadingDigits(key)] ) )
             else:
-                print            
+                print()            
         totalerrors= self.getTotalErrors()
-        print "\n     total:",
+        print( "\n     total:", end=" " )
         for error in totalerrors:
-            print "{0:10.4f}".format( error ),
-        print
+            print( "{0:10.4f}".format( error ), end=" " )
+        print()
         if self.__correlations:
-            print "\nCorrelations:"
-            keys= self.__correlations.keys()
-            keys.sort()
+            print( "\nCorrelations:" )
+            keys= sorted( self.__correlations.keys() )
             for key in keys:
-                print "\n{0:s}:".format( stripLeadingDigits( key ) )
+                print( "\n{0:s}:".format( stripLeadingDigits( key ) ) )
                 covopt= self.__covopts[key]
                 correlations= self.__correlations[key]
                 n= int( sqrt( len(correlations) ) )
@@ -354,10 +353,11 @@ class AverageDataParser:
                     for j in range(n):
                         ii= i*n+j
                         if "c" in covopt:
-                            print "{0:6.3f}".format( correlations[ii] ),
+                            print( "{0:6.3f}".format( correlations[ii] ),
+                                   end=" " )
                         else:
-                            print correlations[ii],
-                    print
+                            print( correlations[ii], end=" " )
+                    print()
         return
 
     # Retrieve values:

@@ -39,6 +39,8 @@ class AverageDataParserLogNormalTest( unittest.TestCase ):
 
 class AverageDataParserTest( unittest.TestCase ):
 
+    maxDiff= None
+    
     def setUp( self ):
         self.__parser= AverageDataParser( "test.txt" )
         return
@@ -198,41 +200,41 @@ class AverageDataParserTest( unittest.TestCase ):
         return
 
     def test_printInputs( self ):
-        import StringIO, sys
-        output= StringIO.StringIO()
+        import io, sys
+        output= io.StringIO()
         sys.stdout= output
         self.__parser.printInputs()
         sys.stdout= sys.__stdout__
         printout= output.getvalue()
         expectedprintout= "\n AverageDataParser: input from test.txt\n\
 \n\
- Variables:       Val1       Val2       Val3 Cov. opt.\n\
+ Variables:       Val1       Val2       Val3 Cov. opt. \n\
 \n\
-    Values:   171.5000   173.1000   174.5000\n\
-      stat:     0.3000     0.3300     0.4000 c\n\
-      err1:     1.1000     1.3000     1.5000 m\n\
-      err2:     0.9000     1.5000     1.9000 m\n\
-      err3:     2.4000     3.1000     3.5000 p\n\
-      err4:     1.4000     2.9000     3.3000 f\n\
+    Values:   171.5000   173.1000   174.5000 \n\
+      stat:     0.3000     0.3300     0.4000 c \n\
+      err1:     1.1000     1.3000     1.5000 m \n\
+      err2:     0.9000     1.5000     1.9000 m \n\
+      err3:     2.4000     3.1000     3.5000 p \n\
+      err4:     1.4000     2.9000     3.3000 f \n\
 \n\
-     total:     3.1353     4.6978     5.4000\n\
+     total:     3.1353     4.6978     5.4000 \n\
 \n\
 Correlations:\n\
 \n\
 stat:\n\
- 1.000  0.000  0.000\n\
- 0.000  1.000  0.000\n\
- 0.000  0.000  1.000\n\
+ 1.000  0.000  0.000 \n\
+ 0.000  1.000  0.000 \n\
+ 0.000  0.000  1.000 \n\
 \n\
 err1:\n\
-p p p\n\
-p p p\n\
-p p p\n\
+p p p \n\
+p p p \n\
+p p p \n\
 \n\
 err2:\n\
-f f f\n\
-f f f\n\
-f f f\n"
+f f f \n\
+f f f \n\
+f f f \n"
         self.assertEqual( printout, expectedprintout )
         return
 
