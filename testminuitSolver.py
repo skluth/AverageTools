@@ -5,8 +5,6 @@
 
 import unittest
 
-from ctypes import c_double
-
 import minuitSolver
 
 
