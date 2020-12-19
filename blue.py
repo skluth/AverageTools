@@ -5,8 +5,9 @@
 # AverageDataParser reads input files
 
 import numpy
-from AverageDataParser import AverageDataParser, stripLeadingDigits
-from clsqAverage import Average
+from AverageTools import AverageDataParser
+from AverageTools.AverageDataParser import stripLeadingDigits
+from AverageTools.clsqAverage import Average
 from math import sqrt
 from ROOT import TMath
 
@@ -61,8 +62,8 @@ class Blue( Average ):
     def __printMatrix( self, m, fmt="8.4f" ):
         for i in range( m.shape[0] ):
             for j in range( m.shape[1] ):
-                print ("{0:"+fmt+"}").format( m[i,j] ),
-            print
+                print( ("{0:"+fmt+"}").format( m[i,j] ), end=" " )
+            print()
     def printInputs( self, printcovopt=False  ):
         print( "\n Best Linear Unbiased Estimator average" )
         self.dataparser.printInputs()

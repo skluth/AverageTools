@@ -1,6 +1,7 @@
 
-from AverageDataParser import AverageDataParser, stripLeadingDigits
-from minuitSolver import minuitSolver
+from AverageTools.AverageDataParser import AverageDataParser
+from AverageTools.AverageDataParser import stripLeadingDigits
+from AverageTools.minuitSolver import minuitSolver
 from ConstrainedFit import clsq
 from math import sqrt, exp
 from numpy import matrix, zeros

@@ -5,8 +5,8 @@
 
 
 
-from clsqAverage import FitAverage
-from minuitSolver import minuitSolver
+from AverageTools.clsqAverage import FitAverage
+from AverageTools.minuitSolver import minuitSolver
 from numpy import matrix
 from math import log
 
