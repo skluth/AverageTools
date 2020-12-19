@@ -29,7 +29,7 @@ class minuitSolver():
              raise MinuitError( "More than 50 parameters, increase maxpars" )
         self.__minuit= TMinuit( maxpars )
         self.minuitCommand( "SET PRI -1" )
-        # Hold on to fcn or python will kill after passing to TMinuit
+        # Hold on to fcn or python will kill it after passing to TMinuit
         self.__fcn= fcn
         self.__minuit.SetFCN( fcn )
         self.__pars= pars
@@ -38,11 +38,6 @@ class minuitSolver():
         self.__setParameters()
         self.__ndof= ndof
         return
-
-    
-    def getMinuit( self ):
-        return self.__minuit
-
     
     def __setParameters( self ):
         for par, parerror, parname, i in zip( self.__pars,
