@@ -59,7 +59,8 @@ class minuitAverage( FitAverage ):
             chisq= delta.getT()*invm*delta
             for ipar in range( npar, npar+nextrapar ):
                 chisq+= par[ipar]**2
-            fval[0]= chisq
+            # Assign chisq to ctypes variable in new pyroot:
+            fval.value= chisq
             return
 
         # Prepare and create the minuit solver:

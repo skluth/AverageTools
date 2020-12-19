@@ -7,7 +7,6 @@ import unittest
 
 from minuitAverage import minuitAverage
 
-
 class minuitAverageTest( unittest.TestCase ):
 
     def setUp( self ):

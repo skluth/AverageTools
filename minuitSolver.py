@@ -29,6 +29,8 @@ class minuitSolver():
              raise MinuitError( "More than 50 parameters, increase maxpars" )
         self.__minuit= TMinuit( maxpars )
         self.minuitCommand( "SET PRI -1" )
+        # Hold on to fcn or python will kill after passing to TMinuit
+        self.__fcn= fcn
         self.__minuit.SetFCN( fcn )
         self.__pars= pars
         self.__parerrors= parerrors
@@ -36,7 +38,12 @@ class minuitSolver():
         self.__setParameters()
         self.__ndof= ndof
         return
-   
+
+    
+    def getMinuit( self ):
+        return self.__minuit
+
+    
     def __setParameters( self ):
         for par, parerror, parname, i in zip( self.__pars,
                                               self.__parerrors,
@@ -71,24 +78,24 @@ class minuitSolver():
     def __printPars( self, par, parerrors, parnames, ffmt=".4f" ):
         for ipar in range( len( par ) ):
             name= parnames[ipar]
-            print "{0:>15s}:".format( name ),
+            print( "{0:>15s}:".format( name ), end=" " )
             fmtstr= "{0:10" + ffmt + "} +/- {1:10" + ffmt + "}"
-            print fmtstr.format( par[ipar], parerrors[ipar] )
+            print( fmtstr.format( par[ipar], parerrors[ipar] ) )
         return
 
     def printResults( self, ffmt=".4f", cov=False, corr=False ):
-        print "\nMinuit least squares"
-        print "\nResults after minuit fit"
+        print( "\nMinuit least squares" )
+        print( "\nResults after minuit fit" )
         hstat= self.__getStat()
         chisq= hstat["min"]
         ndof= self.__ndof
         fmtstr= "\nChi^2= {0:"+ffmt+"} for {1:d} d.o.f, Chi^2/d.o.f= {2:"+ffmt+"}, P-value= {3:"+ffmt+"}"
-        print fmtstr.format( chisq, ndof, chisq/float(ndof), 
-                             TMath.Prob( chisq, ndof ) )
+        print( fmtstr.format( chisq, ndof, chisq/float(ndof), 
+                             TMath.Prob( chisq, ndof ) ) )
         fmtstr= "Est. dist. to min: {0:.3e}, minuit status: {1}"
-        print fmtstr.format( hstat["edm"], hstat["status"] )
-        print "\nFitted parameters and errors"
-        print "           Name       Value          Error"
+        print( fmtstr.format( hstat["edm"], hstat["status"] ) )
+        print( "\nFitted parameters and errors" )
+        print( "           Name       Value          Error" )
         pars= self.getPars()
         parerrors= self.getParErrors()
         self.__printPars( pars, parerrors, self.__parnames, ffmt=ffmt )
@@ -100,23 +107,23 @@ class minuitSolver():
 
     def __printMatrix( self, m, ffmt ):
         mshape= m.shape
-        print "{0:>10s}".format( "" ),
+        print( "{0:>10s}".format( "" ), end=" " )
         for i in range(mshape[0]):
-            print "{0:>10s}".format( self.__parnames[i] ),
-        print
+            print( "{0:>10s}".format( self.__parnames[i] ), end=" " )
+        print()
         for i in range(mshape[0]):
-            print "{0:>10s}".format( self.__parnames[i] ),
+            print( "{0:>10s}".format( self.__parnames[i] ), end=" " )
             for j in range(mshape[1]):
                 fmtstr= "{0:10"+ffmt+"}"
-                print fmtstr.format( m[i,j] ),
-            print
+                print( fmtstr.format( m[i,j] ), end=" " )
+            print()
         return
     def printCovariances( self ):
-        print "\nCovariance matrix:"
+        print( "\nCovariance matrix:" )
         self.__printMatrix( self.getCovariancematrix(), ".3e" )
         return
     def printCorrelations( self ):
-        print "\nCorrelation matrix:"
+        print( "\nCorrelation matrix:" )
         self.__printMatrix( self.getCorrelationmatrix(), ".3f" )
         return
 

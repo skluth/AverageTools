@@ -12,12 +12,14 @@ from blue import Blue
 
 class blueTest( unittest.TestCase ):
 
+    maxDiff= None
+
     def setUp( self ):
         self.__blue= Blue( "test.txt" )
         return
 
     def test_calcAverage( self ):
-        value= self.__blue.calcAverage()
+        value= float( self.__blue.calcAverage() )
         expectedvalue= 170.70919692
         self.assertAlmostEqual( value, expectedvalue )
         return
@@ -57,8 +59,8 @@ class blueTest( unittest.TestCase ):
         return
 
     def test_printResults( self ):
-        import StringIO, sys
-        output= StringIO.StringIO()
+        import io, sys
+        output= io.StringIO()
         sys.stdout= output
         self.__blue.printResults()
         self.__blue.printErrorsAndWeights( True )
@@ -68,57 +70,60 @@ class blueTest( unittest.TestCase ):
 \n\
  Chi^2= 0.77 for 2 d.o.f, chi^2/d.o.f= 0.39, P(chi^2)= 0.6804\n\
 \n\
-   Average:   170.7092\n\
+   Average:   170.7092 \n\
 \n\
 Error composition:\n\
             +/- errors   dI/df/I offd. sums\n\
-      stat:     0.4114     0.000\n\
-      err1:     1.1326     0.114\n\
-      err2:     0.6256     0.140\n\
-      err3:     2.5071     0.532\n\
-      err4:     0.8205     0.387\n\
-      syst:     2.9382\n\
-     total:     2.9669\n\
+      stat:     0.4114     0.000 \n\
+      err1:     1.1326     0.114 \n\
+      err2:     0.6256     0.140 \n\
+      err3:     2.5071     0.532 \n\
+      err4:     0.8205     0.387 \n\
+      syst:     2.9382 \n\
+     total:     2.9669 \n\
 \n\
- Variables:       Val1       Val2       Val3\n\
-   Weights:     1.3390    -0.1616    -0.1774\n\
+ Variables:       Val1       Val2       Val3 \n\
+   Weights:     1.3390    -0.1616    -0.1774 \n\
   DeltaI/I:     0.8954     0.3989     0.3019    -0.5962\n\
-     Pulls:     0.2522     0.5089     0.7020\n\
+     Pulls:     0.2522     0.5089     0.7020 \n\
 \n\
  dI/df/I offdiagonals per error source:\n\
       err1:\n\
-           Val2    Val3\n\
-   Val1  0.0595  0.0653\n\
-   Val2         -0.0110\n\
+           Val2    Val3 \n\
+   Val1  0.0595  0.0653 \n\
+   Val2         -0.0110 \n\
 \n\
       err2:\n\
-           Val2    Val3\n\
-   Val1  0.0664  0.0923\n\
-   Val2         -0.0186\n\
+           Val2    Val3 \n\
+   Val1  0.0664  0.0923 \n\
+   Val2         -0.0186 \n\
 \n\
       err3:\n\
-           Val2    Val3\n\
-   Val1  0.2833  0.3109\n\
-   Val2         -0.0626\n\
+           Val2    Val3 \n\
+   Val1  0.2833  0.3109 \n\
+   Val2         -0.0626 \n\
 \n\
       err4:\n\
-           Val2    Val3\n\
-   Val1  0.1997  0.2494\n\
-   Val2         -0.0623\n\
+           Val2    Val3 \n\
+   Val1  0.1997  0.2494 \n\
+   Val2         -0.0623 \n\
 \n\
      total:\n\
-           Val2    Val3\n\
-   Val1  0.6088  0.7178\n\
-   Val2         -0.1545\n\n"
+           Val2    Val3 \n\
+   Val1  0.6088  0.7178 \n\
+   Val2         -0.1545 \n\
+\n"
         self.assertEqual( printout, expectedprintout )
         return
 
 
 class blueValassiTest( unittest.TestCase ):
 
+    maxDiff= None
+
     def __getprintResults( self, bluesolver ):
-        import StringIO, sys
-        output= StringIO.StringIO()
+        import io, sys
+        output= io.StringIO()
         sys.stdout= output
         bluesolver.printResults()
         bluesolver.printErrorsAndWeights()
@@ -132,21 +137,21 @@ class blueValassiTest( unittest.TestCase ):
 \n\
  Chi^2= 2.02 for 2 d.o.f, chi^2/d.o.f= 1.01, P(chi^2)= 0.3633\n\
 \n\
-   Average:    10.8000    11.7500\n\
+   Average:    10.8000    11.7500 \n\
 \n\
 Error composition:\n\
-      stat:     0.9487     2.1213\n\
-      syst:     0.0000     0.0000\n\
-     total:     0.9487     2.1213\n\
+      stat:     0.9487     2.1213 \n\
+      syst:     0.0000     0.0000 \n\
+     total:     0.9487     2.1213 \n\
 \n\
- Variables:        BeA        BeB      BtauA      BtauB\n\
- Weights a:     0.9000     0.1000     0.0000     0.0000\n\
- Weights b:     0.0000     0.0000     0.5000     0.5000\n\
-     Pulls:    -0.3000     0.9000    -0.7500     0.7500\n\
+ Variables:        BeA        BeB      BtauA      BtauB \n\
+ Weights a:     0.9000     0.1000     0.0000     0.0000 \n\
+ Weights b:     0.0000     0.0000     0.5000     0.5000 \n\
+     Pulls:    -0.3000     0.9000    -0.7500     0.7500 \n\
 \n\
 Correlations:\n\
- 1.000  0.000\n\
- 0.000  1.000\n"
+ 1.000  0.000 \n\
+ 0.000  1.000 \n"
         self.assertEqual( printout, expectedprintout )
         return
 
@@ -157,21 +162,21 @@ Correlations:\n\
 \n\
  Chi^2= 2.11 for 2 d.o.f, chi^2/d.o.f= 1.06, P(chi^2)= 0.3475\n\
 \n\
-   Average:    10.6813    11.7500\n\
+   Average:    10.6813    11.7500 \n\
 \n\
 Error composition:\n\
-      stat:     0.9832     2.1213\n\
-      syst:     0.0000     0.0000\n\
-     total:     0.9832     2.1213\n\
+      stat:     0.9832     2.1213 \n\
+      syst:     0.0000     0.0000 \n\
+     total:     0.9832     2.1213 \n\
 \n\
- Variables:        BeA        BeB      BtauA      BtauB\n\
- Weights a:     0.9396     0.0604     0.0000     0.0000\n\
- Weights b:     0.0000     0.0000     0.5000     0.5000\n\
-     Pulls:    -0.1813     0.9396    -0.7500     0.7500\n\
+ Variables:        BeA        BeB      BtauA      BtauB \n\
+ Weights a:     0.9396     0.0604     0.0000     0.0000 \n\
+ Weights b:     0.0000     0.0000     0.5000     0.5000 \n\
+     Pulls:    -0.1813     0.9396    -0.7500     0.7500 \n\
 \n\
 Correlations:\n\
- 1.000  0.000\n\
- 0.000  1.000\n"
+ 1.000  0.000 \n\
+ 0.000  1.000 \n"
         self.assertEqual( printout, expectedprintout )
         return
 
@@ -182,21 +187,21 @@ Correlations:\n\
 \n\
  Chi^2= 1.23 for 2 d.o.f, chi^2/d.o.f= 0.61, P(chi^2)= 0.5408\n\
 \n\
-   Average:    10.6373    11.1353\n\
+   Average:    10.6373    11.1353 \n\
 \n\
 Error composition:\n\
-      stat:     0.9053     0.9404\n\
-      syst:     0.0000     0.0000\n\
-     total:     0.9053     0.9404\n\
+      stat:     0.9053     0.9404 \n\
+      syst:     0.0000     0.0000 \n\
+     total:     0.9053     0.9404 \n\
 \n\
- Variables:        BeA        BeB      BtauA      BtauB\n\
- Weights a:     0.8197     0.1803     0.0897    -0.0897\n\
- Weights b:     0.8075    -0.8075     0.0983     0.9017\n\
-     Pulls:    -0.1373     0.9542    -0.5451     0.9549\n\
+ Variables:        BeA        BeB      BtauA      BtauB \n\
+ Weights a:     0.8197     0.1803     0.0897    -0.0897 \n\
+ Weights b:     0.8075    -0.8075     0.0983     0.9017 \n\
+     Pulls:    -0.1373     0.9542    -0.5451     0.9549 \n\
 \n\
 Correlations:\n\
- 1.000  0.948\n\
- 0.948  1.000\n"
+ 1.000  0.948 \n\
+ 0.948  1.000 \n"
         self.assertEqual( printout, expectedprintout )
         return
 
@@ -207,21 +212,21 @@ Correlations:\n\
 \n\
  Chi^2= 6.07 for 2 d.o.f, chi^2/d.o.f= 3.04, P(chi^2)= 0.0480\n\
 \n\
-   Average:    11.4448    15.9803\n\
+   Average:    11.4448    15.9803 \n\
 \n\
 Error composition:\n\
-      stat:     0.9053     0.9404\n\
-      syst:     0.0000     0.0000\n\
-     total:     0.9053     0.9404\n\
+      stat:     0.9053     0.9404 \n\
+      syst:     0.0000     0.0000 \n\
+     total:     0.9053     0.9404 \n\
 \n\
- Variables:        BeA        BeB      BtauA      BtauB\n\
- Weights a:     0.8197     0.1803    -0.0897     0.0897\n\
- Weights b:    -0.8075     0.8075     0.0983     0.9017\n\
-     Pulls:    -0.9448     0.6851    -2.1601    -0.6601\n\
+ Variables:        BeA        BeB      BtauA      BtauB \n\
+ Weights a:     0.8197     0.1803    -0.0897     0.0897 \n\
+ Weights b:    -0.8075     0.8075     0.0983     0.9017 \n\
+     Pulls:    -0.9448     0.6851    -2.1601    -0.6601 \n\
 \n\
 Correlations:\n\
- 1.000 -0.948\n\
--0.948  1.000\n"
+ 1.000 -0.948 \n\
+-0.948  1.000 \n"
         self.assertEqual( printout, expectedprintout )
         return
 
@@ -232,22 +237,22 @@ Correlations:\n\
 \n\
  Chi^2= 1.23 for 2 d.o.f, chi^2/d.o.f= 0.62, P(chi^2)= 0.5404\n\
 \n\
-   Average:    10.6377    11.1358\n\
+   Average:    10.6377    11.1358 \n\
 \n\
 Error composition:\n\
-      stat:     0.8636     0.8963\n\
-       exp:     0.2714     0.2820\n\
-      syst:     0.2714     0.2820\n\
-     total:     0.9053     0.9397\n\
+      stat:     0.8636     0.8963 \n\
+       exp:     0.2714     0.2820 \n\
+      syst:     0.2714     0.2820 \n\
+     total:     0.9053     0.9397 \n\
 \n\
- Variables:        BeA        BeB      BtauA      BtauB\n\
- Weights a:     0.8195     0.1805     0.0897    -0.0897\n\
- Weights b:     0.8076    -0.8076     0.0981     0.9019\n\
-     Pulls:    -0.1377     0.9549    -0.5453     0.9556\n\
+ Variables:        BeA        BeB      BtauA      BtauB \n\
+ Weights a:     0.8195     0.1805     0.0897    -0.0897 \n\
+ Weights b:     0.8076    -0.8076     0.0981     0.9019 \n\
+     Pulls:    -0.1377     0.9549    -0.5453     0.9556 \n\
 \n\
 Correlations:\n\
- 1.000  0.949\n\
- 0.949  1.000\n"
+ 1.000  0.949 \n\
+ 0.949  1.000 \n"
         self.assertEqual( printout, expectedprintout )
         return
 
@@ -258,22 +263,22 @@ Correlations:\n\
 \n\
  Chi^2= 6.08 for 2 d.o.f, chi^2/d.o.f= 3.04, P(chi^2)= 0.0479\n\
 \n\
-   Average:    11.4453    15.9812\n\
+   Average:    11.4453    15.9812 \n\
 \n\
 Error composition:\n\
-      stat:     0.8636     0.8963\n\
-       exp:     0.2714     0.2820\n\
-      syst:     0.2714     0.2820\n\
-     total:     0.9053     0.9397\n\
+      stat:     0.8636     0.8963 \n\
+       exp:     0.2714     0.2820 \n\
+      syst:     0.2714     0.2820 \n\
+     total:     0.9053     0.9397 \n\
 \n\
- Variables:        BeA        BeB      BtauA      BtauB\n\
- Weights a:     0.8195     0.1805    -0.0897     0.0897\n\
- Weights b:    -0.8076     0.8076     0.0981     0.9019\n\
-     Pulls:    -0.9453     0.6855    -2.1604    -0.6610\n\
+ Variables:        BeA        BeB      BtauA      BtauB \n\
+ Weights a:     0.8195     0.1805    -0.0897     0.0897 \n\
+ Weights b:    -0.8076     0.8076     0.0981     0.9019 \n\
+     Pulls:    -0.9453     0.6855    -2.1604    -0.6610 \n\
 \n\
 Correlations:\n\
- 1.000 -0.949\n\
--0.949  1.000\n"
+ 1.000 -0.949 \n\
+-0.949  1.000 \n"
         self.assertEqual( printout, expectedprintout )
         return
 
@@ -284,17 +289,17 @@ Correlations:\n\
 \n\
  Chi^2= 2.20 for 3 d.o.f, chi^2/d.o.f= 0.73, P(chi^2)= 0.5329\n\
 \n\
-   Average:    10.9592\n\
+   Average:    10.9592 \n\
 \n\
 Error composition:\n\
-      stat:     0.7907\n\
-       exp:     0.3529\n\
-      syst:     0.3529\n\
-     total:     0.8659\n\
+      stat:     0.7907 \n\
+       exp:     0.3529 \n\
+      syst:     0.3529 \n\
+     total:     0.8659 \n\
 \n\
- Variables:        BeA        BeB      BtauA      BtauB\n\
-   Weights:     0.7498     0.0835     0.0833     0.0835\n\
-     Pulls:    -0.4592     0.8477    -0.4864     1.0145\n"
+ Variables:        BeA        BeB      BtauA      BtauB \n\
+   Weights:     0.7498     0.0835     0.0833     0.0835 \n\
+     Pulls:    -0.4592     0.8477    -0.4864     1.0145 \n"
         self.assertEqual( printout, expectedprintout )
         return
 

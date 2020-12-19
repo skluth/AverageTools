@@ -21,9 +21,6 @@ class minuitSolverTest( unittest.TestCase ):
         errc= [   2.4,   3.1,   3.5 ]
 
         def fcn( n, grad, fval, par, ipar ):
-
-            # print n[0], ipar
-
             ave= par[0]
             pa= par[1]
             pb= par[2]
@@ -34,17 +31,17 @@ class minuitSolverTest( unittest.TestCase ):
                      erra[1]*pa + errb[1]*pb + errc[1]*pc )/stat[1]
             term2= ( mtop[2] - ave + 
                      erra[2]*pa + errb[2]*pb + errc[2]*pc )/stat[2]
-            fval[0]= term0**2 + term1**2 + term2**2 + pa**2 + pb**2 + pc**2
+            chisq= term0**2 + term1**2 + term2**2 + pa**2 + pb**2 + pc**2
+            fval.value= chisq
             return
-
+        
         pars= [ 172.0, 0.0, 0.0, 0.0 ]
         parerrors= [ 2.0, 1.0, 1.0, 1.0 ]
         parnames= [ "average", "pa", "pb", "pc" ]
         ndof= 2
-
         self.__solver= minuitSolver.minuitSolver( fcn, pars, parerrors, 
                                                   parnames, ndof )
-
+        
         return
 
     def test_solve( self ):

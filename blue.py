@@ -55,7 +55,7 @@ class Blue( Average ):
         inv= self.inv
         delta= v - gm*avg
         chisq= delta.getT()*inv*delta
-        return chisq
+        return float( chisq )
 
     # Print the input data:
     def __printMatrix( self, m, fmt="8.4f" ):
@@ -64,28 +64,28 @@ class Blue( Average ):
                 print ("{0:"+fmt+"}").format( m[i,j] ),
             print
     def printInputs( self, printcovopt=False  ):
-        print "\n Best Linear Unbiased Estimator average"
+        print( "\n Best Linear Unbiased Estimator average" )
         self.dataparser.printInputs()
         if printcovopt:
-            print "\n Covariance matrices:"
+            print( "\n Covariance matrices:" )
             for key in sorted( self.hcov.keys() ):
-                print "{0:>10s}:".format( stripLeadingDigits( key ) )
+                print( "{0:>10s}:".format( stripLeadingDigits( key ) ) )
                 self.__printMatrix( self.hcov[key] )
-            print "Total covariance:"
+            print( "Total covariance:" )
             self.__printMatrix( self.cov )
             corr= numpy.matrix( self.cov )
             for i in range( corr.shape[0] ):
                 for j in range( corr.shape[1] ):
                     corr[i,j]= self.cov[i,j]/sqrt( self.cov[i,i]*self.cov[j,j] )
-            print "Total correlation:"
+            print( "Total correlation:" )
             self.__printMatrix( corr, "6.3f" )
-            print "Inverse:"
+            print( "Inverse:" )
             self.__printMatrix( self.inv )
         return
 
     # Print results:
     def printResults( self ):
-        print "\n Results:"
+        print( "\n Results:" )
         chisq= float( self.calcChisq() )
         herrs, wm= self.errorAnalysis()
         navg= wm.shape[0]
@@ -93,13 +93,13 @@ class Blue( Average ):
         ndof= nvar - navg
         chisqdof= chisq/float(ndof)
         pvalue= TMath.Prob( chisq, ndof )
-        print "\n Chi^2= {0:.2f} for {1:d} d.o.f, chi^2/d.o.f= {2:.2f}, P(chi^2)= {3:.4f}".format( chisq, ndof, chisqdof, pvalue )
+        print( "\n Chi^2= {0:.2f} for {1:d} d.o.f, chi^2/d.o.f= {2:.2f}, P(chi^2)= {3:.4f}".format( chisq, ndof, chisqdof, pvalue ) )
         avg= self.calcAverage()
-        print "\n   Average:",
+        print( "\n   Average:", end=" " )
         for iavg in range( navg ):
-            print "{0:10.4f}".format( avg[iavg,0] ),
-        print
-        print
+            print( "{0:10.4f}".format( avg[iavg,0] ), end=" " )
+        print()
+        print()
         return
   
 
@@ -152,7 +152,7 @@ class Blue( Average ):
         # Inverse and weights:
         self.inv= self.cov.getI()
         weights= self.calcWeights()
-        print "Weights:", weights
+        print( "Weights:", weights )
         return 
 
 

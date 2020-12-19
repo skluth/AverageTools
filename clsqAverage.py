@@ -89,83 +89,86 @@ class Average:
         errors, weightsmatrix= self.errorAnalysis()
         navg= weightsmatrix.shape[0]
         nval= weightsmatrix.shape[1]
-        print "Error composition:"
+        print( "Error composition:" )
         if optinfo and navg == 1:
-            print "            +/- errors   dI/df/I offd. sums"
+            print( "            +/- errors   dI/df/I offd. sums" )
             hinfos, hinfosums= self.informationAnalysis( weightsmatrix )
         errorkeys= sorted( errors.keys() )
         errorkeys.remove( "totalcov" )
         errorkeys.remove( "systcov" )
         for errorkey in errorkeys:
-            print "{0:>10s}:".format( stripLeadingDigits( errorkey ) ),
+            print( "{0:>10s}:".format( stripLeadingDigits( errorkey ) ),
+                   end=" " )
             for iavg in range( navg ):
                 error= errors[errorkey]
-                print "{0:10.4f}".format( sqrt(error[iavg,iavg]) ),
+                print( "{0:10.4f}".format( sqrt(error[iavg,iavg]) ),
+                       end=" " )
                 if navg == 1 and optinfo and not ( "syst" in errorkey or
                                                    "total" in errorkey ):
-                    print "{0:9.3f}".format( hinfosums[errorkey] ),
-            print
+                    print( "{0:9.3f}".format( hinfosums[errorkey] ),
+                           end=" " )
+            print()
         names= self.__dataparser.getNames()
-        print "\n Variables:",
+        print( "\n Variables:", end=" " )
         for name in names:
-            print "{0:>10s}".format( name ),
-        print
+            print( "{0:>10s}".format( name ), end=" " )
+        print()
         groups= sorted(set(self.__dataparser.getGroups()))
         for iavg in range( navg ):
             txt= "Weights"
             if navg > 1:
                 txt+= " "+str(groups[iavg])
-            print "{0:>10s}:".format( txt ),
+            print( "{0:>10s}:".format( txt ), end=" " )
             for ival in range( nval ):
-                print "{0:10.4f}".format( float(weightsmatrix[iavg,ival]) ),
-            print
+                print( "{0:10.4f}".format( float(weightsmatrix[iavg,ival]) ),
+                       end=" " )
+            print()
         if optinfo:
-            print "  DeltaI/I:",
+            print( "  DeltaI/I:", end=" " )
             totalerrors= self.__dataparser.getTotalErrors()
             for iavg in range( navg ):
                 if iavg > 0:
-                    print "           ",
+                    print( "           ", end=" " )
                 deltaIsum= 0.0
                 for ival in range( nval ):
                     deltaI= errors["total"][iavg,iavg]/totalerrors[ival]**2
                     deltaIsum+= deltaI
-                    print "{0:10.4f}".format( deltaI ),
-                print "{0:10.4f}".format( 1.0-deltaIsum )
-        print "     Pulls:", 
+                    print( "{0:10.4f}".format( deltaI ), end=" " )
+                print( "{0:10.4f}".format( 1.0-deltaIsum ) )
+        print( "     Pulls:", end=" " )
         pulls= self.calcPulls()
         for ival in range( nval ):
-            print "{0:10.4f}".format( pulls[ival,0] ),
-        print
+            print( "{0:10.4f}".format( pulls[ival,0] ), end=" " )
+        print()
         if navg > 1:
-            print "\nCorrelations:"
+            print( "\nCorrelations:" )
             totcov= errors["total"]
             for iavg in range( navg ):
                 for javg in range( navg ):
                     corr= totcov[iavg,javg]/sqrt(totcov[iavg,iavg]*totcov[javg,javg])
-                    print "{0:6.3f}".format( corr ),
-                print
+                    print( "{0:6.3f}".format( corr ), end=" " )
+                print()
         elif optinfo:
-            print "\n dI/df/I offdiagonals per error source:"
+            print( "\n dI/df/I offdiagonals per error source:" )
             keys= sorted( hinfos.keys() )
-            #keys.remove( "01stat" )
             keys= [ key for key in keys if not "stat" in key ]
             for key in keys:
-                print "{0:>10s}:".format( stripLeadingDigits( key ) )
+                print( "{0:>10s}:".format( stripLeadingDigits( key ) ) )
                 infom= hinfos[key]
-                print "       ",
+                print( "       ", end=" " )
                 for name in names[1:]:
-                    print "{0:>7s}".format( name ),
-                print
+                    print( "{0:>7s}".format( name ), end=" " )
+                print()
                 for i in range( nval-1 ):
                     for j in range( nval ):
                         if j == 0 and i < nval-1:
-                            print "{0:>7s}".format( names[i] ),
+                            print( "{0:>7s}".format( names[i] ), end=" " )
                         elif j > i:
-                            print "{0:7.4f}".format( infom[i,j] ),
+                            print( "{0:7.4f}".format( infom[i,j] ), end=" " )
                         else:
-                            print "       ",
-                    print
-                print
+                            print( "       ", end=" " )
+                    print()
+                print()
         return
 
     # Calculate pulls:
@@ -417,9 +420,9 @@ class clsqAverage( FitAverage ):
 
     def printInputs( self ):
         FitAverage.printInputs( self )
-        print "\nConstraints before solution:"
+        print( "\nConstraints before solution:" )
         solver= self.getSolver()
-        print solver.getConstraints()
+        print( solver.getConstraints() )
         return
 
     def runSolver( self ):
