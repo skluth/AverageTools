@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # unit tests for constrained least squares averages
 # S. Kluth 01/2012
@@ -23,23 +23,23 @@ class minuitSolverTest( unittest.TestCase ):
             pa= par[1]
             pb= par[2]
             pc= par[3]
-            term0= ( mtop[0] - ave + 
+            term0= ( mtop[0] - ave +
                      erra[0]*pa + errb[0]*pb + errc[0]*pc )/stat[0]
-            term1= ( mtop[1] - ave + 
+            term1= ( mtop[1] - ave +
                      erra[1]*pa + errb[1]*pb + errc[1]*pc )/stat[1]
-            term2= ( mtop[2] - ave + 
+            term2= ( mtop[2] - ave +
                      erra[2]*pa + errb[2]*pb + errc[2]*pc )/stat[2]
             chisq= term0**2 + term1**2 + term2**2 + pa**2 + pb**2 + pc**2
             fval.value= chisq
             return
-        
+
         pars= [ 172.0, 0.0, 0.0, 0.0 ]
         parerrors= [ 2.0, 1.0, 1.0, 1.0 ]
         parnames= [ "average", "pa", "pb", "pc" ]
         ndof= 2
-        self.__solver= minuitSolver.minuitSolver( fcn, pars, parerrors, 
+        self.__solver= minuitSolver.minuitSolver( fcn, pars, parerrors,
                                                   parnames, ndof )
-        
+
         return
 
     def test_solve( self ):
@@ -64,7 +64,7 @@ class minuitSolverTest( unittest.TestCase ):
     def test_getPar( self ):
         self.__solver.solve()
         pars= self.__solver.getPars()
-        expectedpars= [ 167.1022776, -0.48923998, -1.13417736, 
+        expectedpars= [ 167.1022776, -0.48923998, -1.13417736,
                         -1.21202615 ]
         for par, expectedpar in zip( pars, expectedpars ):
             self.assertAlmostEqual( par, expectedpar, places=6 )

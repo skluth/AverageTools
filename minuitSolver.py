@@ -19,12 +19,12 @@ class MinuitError( Exception ):
          self.__value= value
     def __str__( self ):
          return repr( self.__value )
-          
-          
+
+
 class minuitSolver():
 
     def __init__( self, fcn, pars, parerrors, parnames, ndof, maxpars=50 ):
-          
+
         if len( pars ) > maxpars:
              raise MinuitError( "More than 50 parameters, increase maxpars" )
         self.__minuit= TMinuit( maxpars )
@@ -38,13 +38,13 @@ class minuitSolver():
         self.__setParameters()
         self.__ndof= ndof
         return
-    
+
     def __setParameters( self ):
         for par, parerror, parname, i in zip( self.__pars,
                                               self.__parerrors,
-                                              self.__parnames, 
+                                              self.__parnames,
                                               range( len( self.__pars ) ) ):
-             ierflg= self.__minuit.DefineParameter( i, parname, par, parerror, 
+             ierflg= self.__minuit.DefineParameter( i, parname, par, parerror,
                                                     0.0, 0.0 )
         if ierflg != 0:
              message= "Minuit define parameter error: " + str( ierflg )
@@ -171,11 +171,11 @@ class minuitSolver():
         nparx= c_int()
         istat= c_int()
         self.__minuit.mnstat( fmin, fedm, errdef, npari, nparx, istat )
-        hstat= { "min": fmin.value, 
-                 "edm": fedm.value, 
-                 "errdef": errdef.value, 
-                 "npari": npari.value, 
-                 "nparx": nparx.value, 
+        hstat= { "min": fmin.value,
+                 "edm": fedm.value,
+                 "errdef": errdef.value,
+                 "npari": npari.value,
+                 "nparx": nparx.value,
                  "status": istat.value }
         return hstat
 
