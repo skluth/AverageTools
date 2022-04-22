@@ -167,6 +167,7 @@ class AverageDataParser:
         hredcov= {}
         systerrormatrix= {}
         errorkeys= sorted( self.__errors.keys() )
+        covoptions= self.__covopts
         for errorkey in errorkeys:
             nerr= errorkeys.index( errorkey )
             lcov= []
@@ -175,7 +176,7 @@ class AverageDataParser:
             nerrors= len( errors )
             covoption= self.__covopts[errorkey]
             # Global options, all covariances according to
-            # same rule gp, p, f or u:
+            # same rule gpr, gp, p, f, a or u:
             if "gpr" in covoption:
                 minrelerr= min( [ err/value for err, value in 
                                   zip( errors, self.__inputs ) if err > 0.0 ] )
@@ -187,7 +188,7 @@ class AverageDataParser:
                             redcovelement= errors[iderr1]**2 - (minrelerr*self.__inputs[iderr1])**2
                             redcovelement= max( redcovelement, 0.0 )
                         else:
-                            covelement= minrelerr**2*self.__inputs[iderr1]*self.__inputs[iderr2]                            
+                            covelement= minrelerr**2*self.__inputs[iderr1]*self.__inputs[iderr2]
                             redcovelement= 0.0
                         lcov.append( covelement )
                         lredcov.append( redcovelement )
@@ -246,38 +247,38 @@ class AverageDataParser:
                     lredcov= len(errors)**2*[0.0]
                 else:
                     lredcov= lcov
-
             # Error in option:
             else:
-                print( "Option", covoption, "not recognised" )
-                return
+                raise RuntimeError( "Option", covoption, "not recognised" )
 
+            # Final covariance matrix
             m= self.__makeMatrixFromList( lcov )
 
-            # if self.__hglobals.has_key( "correlationfactor" ):
+            # Apply correlation factor to final cov.matrix if present
             if "correlationfactor" in self.__hglobals:
+                corrfac= self.__hglobals["correlationfactor"]
                 for i in range( m.shape[0] ):
                     for j in range( m.shape[1] ):
                         if i != j and m[i,i]*m[j,j] != 0.0:
-                            m[i,j]*= m[i,j]/(sqrt(m[i,i]*m[j,j]))*self.__hglobals["correlationfactor"]
+                            m[i,j]*= m[i,j]/(sqrt(m[i,i]*m[j,j]))*corrfac
 
-
+            # Store final and reduced cov.matrices
             redm= self.__makeMatrixFromList( lredcov )
             hcov[errorkey]= m
             hredcov[errorkey]= redm
 
-        # Build final full and reduced covariance matrices, reduced means
+        # Build total full and reduced covariance matrices, reduced means
         # all errors except fully correlated (see above)
-        cov= self.__makeZeroMatrix()
+        totalcov= self.__makeZeroMatrix()
         redcov= self.__makeZeroMatrix()
         for errorkey in errorkeys:
             redcov+= hredcov[errorkey]
         for errorkey in errorkeys:
-            # Covariance matrix a la Neudecker et al and Bohm und Zech
             covoption= self.__covopts[errorkey]
-            if "q" in covoption:
-                # Average with "not fully" correlated errors for
-                # calculation of fully correlated cov.matrix elements
+            if "fq" in covoption:
+                # Covariance matrix a la Neudecker et al and Bohm und Zech for
+                # not fully correlated errors, modify errors such that "f" treatment
+                # would produce the covariance matrix
                 gm= numpy.matrix( self.__groupmatrix )
                 inv= redcov.getI()
                 utvinvu= gm.getT()*inv*gm
@@ -286,20 +287,23 @@ class AverageDataParser:
                 values= numpy.matrix( self.__inputs )
                 values.shape= ( len( self.__inputs ), 1 )
                 avg= wm*values
-                # fully correlated cov.matrix elements
+                # Fully correlated cov.matrix elements
                 errors= numpy.matrix( self.__errors[errorkey] )
                 errors.shape= ( len( self.__inputs ), 1 )
                 relerrs= errors/values
-                avgrelerrs= numpy.multiply( gm*avg, relerrs )
-                lcov= avgrelerrs*avgrelerrs.T
-            else:
-                lcov= hcov[errorkey]
-            cov+= lcov
+                avgerrs= numpy.multiply( gm*avg, relerrs )
+                cov= avgerrs*avgerrs.T
+                # Replace covariance matrix and systerrormatrix for this errorkey
+                hcov[errorkey]= cov
+                nerr= errorkeys.index( errorkey )
+                lerrors= [ avgerr.item() for avgerr in avgerrs ]
+                systerrormatrix[nerr]= lerrors
+            totalcov+= hcov[errorkey]
             
         # Keep results as members:
         self.__hcov= hcov
         self.__hredcov= hredcov
-        self.__cov= cov
+        self.__cov= totalcov
         self.__redcov= redcov
         self.__systerrormatrix= systerrormatrix
 
